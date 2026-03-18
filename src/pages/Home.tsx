@@ -1,4 +1,4 @@
-import { useState, memo } from 'react';
+import { useState } from 'react';
 import { Plane, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Dashboard from './Dashboard';

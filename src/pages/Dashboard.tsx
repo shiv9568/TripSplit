@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback, memo } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { Plus, Users, Globe, ArrowRight, Clock, Trash2, Copy, Loader2, Plane, LayoutDashboard, History, Settings, ReceiptText } from 'lucide-react';
+import { Plus, Users, ArrowRight, Clock, Trash2, Copy, Plane, LayoutDashboard, History, Settings, ReceiptText } from 'lucide-react';
 import { tripApi } from '../utils/api';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../components/Toast';
