@@ -4,8 +4,8 @@ import { useNavigate, useParams } from 'react-router-dom';
 
 export default function Analytics() {
   const navigate = useNavigate();
-  const { id } = useParams();
-  const [timeRange, setTimeRange] = useState('All Time');
+  const { id: _id } = useParams();
+  const [timeRange, _setTimeRange] = useState('All Time');
 
   // Mock data
   const totalSpent = 12500;

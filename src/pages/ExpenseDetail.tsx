@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Trash2, Edit3, ReceiptText, Users, Tag, Check } from 'lucide-react';
-import { expenseApi } from '../utils/api';
+import { ArrowLeft, Trash2, Edit3, ReceiptText, Users, Tag } from 'lucide-react';
 import { useToast } from '../components/Toast';
 
 export default function ExpenseDetail() {

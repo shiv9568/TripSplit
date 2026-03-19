@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { Globe, ArrowRight, Map, Receipt, Handshake, Users, DollarSign, ArrowRightCircle } from 'lucide-react';
+import { Globe, Map, Receipt, Handshake, Users, DollarSign } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function LandingPage() {

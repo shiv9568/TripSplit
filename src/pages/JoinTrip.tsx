@@ -14,6 +14,7 @@ export default function JoinTrip() {
   const [joinCode, setJoinCode] = useState(searchParams.get('code') || '');
   const [guestName, setGuestName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
+  useEffect(() => {}, []);
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();

@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, QrCode, CreditCard, Banknote, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, QrCode, Banknote, CheckCircle2 } from 'lucide-react';
 import { useState } from 'react';
 
 export default function Payment() {
