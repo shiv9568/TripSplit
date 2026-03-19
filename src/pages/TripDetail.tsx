@@ -3,8 +3,8 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, Plus, Receipt, PieChart, Users, 
   Copy, Check, Trash2, MessageSquare, Download,
-  Plane, Globe, Sparkles, TrendingUp, Wallet, ChevronRight,
-  Info, History, LayoutDashboard, Settings, ReceiptText
+  Plane, Globe, Sparkles, TrendingUp, ChevronRight,
+  Info, History, LayoutDashboard, ReceiptText, Home, User
 } from 'lucide-react';
 import { tripApi, expenseApi, utilityApi } from '../utils/api';
 import { useApp } from '../context/AppContext';
@@ -430,19 +430,39 @@ export default function TripDetail() {
       </main>
 
       {/* Global Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 px-6 pb-6">
-        <div className="max-w-md mx-auto bg-[#0B1A2C] rounded-[2rem] p-2 flex items-center justify-around shadow-2xl border border-white/5 ring-8 ring-indigo-50/50">
-          <button onClick={() => navigate('/dashboard')} className="p-4 text-slate-400 hover:text-white transition-colors group">
-            <LayoutDashboard size={20} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" />
+      <nav className="fixed bottom-0 left-0 right-0 z-50 px-0 pb-0">
+        <div className="bg-white flex items-center justify-around shadow-[0_-10px_40px_rgb(0,0,0,0.05)] border-t border-slate-100">
+          <button 
+            onClick={() => navigate('/')} 
+            className="flex-1 py-4 flex flex-col items-center gap-1 text-slate-400 hover:text-slate-700 transition-colors"
+          >
+            <Home size={22} strokeWidth={2.5} />
+            <span className="text-[10px] font-bold">Trips</span>
           </button>
-          <button onClick={() => navigate('/history')} className="p-4 text-slate-400 hover:text-white transition-colors group">
-            <History size={20} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" />
+          
+          <button 
+            onClick={() => navigate('/dashboard')}
+            className="flex-1 py-4 flex flex-col items-center gap-1 text-teal-600 relative"
+          >
+            <LayoutDashboard size={22} strokeWidth={2.5} />
+            <span className="text-[10px] font-bold">Dashboard</span>
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-teal-600 rounded-t-full" />
           </button>
-          <button onClick={() => navigate(`/trip/${id}/settlements`)} className="p-4 text-slate-400 hover:text-white transition-colors group">
-            <Wallet size={20} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" />
+
+          <button 
+            onClick={() => navigate(`/trip/${id}/history`)}
+            className="flex-1 py-4 flex flex-col items-center gap-1 text-slate-400 hover:text-slate-700 transition-colors"
+          >
+            <History size={22} strokeWidth={2.5} />
+            <span className="text-[10px] font-bold">History</span>
           </button>
-          <button className="p-4 text-slate-400 hover:text-white transition-colors group">
-            <Settings size={20} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" />
+
+          <button 
+            onClick={() => navigate('/profile')}
+            className="flex-1 py-4 flex flex-col items-center gap-1 text-slate-400 hover:text-slate-700 transition-colors"
+          >
+            <User size={22} strokeWidth={2.5} />
+            <span className="text-[10px] font-bold">Profile</span>
           </button>
         </div>
       </nav>

@@ -73,9 +73,9 @@ export default function Settlements() {
       <header className="relative z-10 px-6 pt-10 pb-6 flex items-center justify-between">
          <button 
            onClick={() => navigate(`/trip/${tripId}`)}
-           className="w-12 h-12 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-all"
+           className="w-10 h-10 bg-white/10 backdrop-blur-md rounded-xl border border-white/20 flex items-center justify-center text-white hover:bg-white/20 transition-all"
          >
-           <ArrowLeft size={24} strokeWidth={2.5} />
+           <ArrowLeft size={20} strokeWidth={2.5} />
          </button>
          <div className="text-center">
             <h1 className="text-xl font-black text-white tracking-tight">Final Settlement</h1>

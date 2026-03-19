@@ -70,9 +70,9 @@ export default function Members() {
       <header className="relative z-10 p-6 flex items-center justify-between">
          <button 
            onClick={() => navigate(`/trip/${tripId}`)}
-           className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-all font-black"
+           className="w-10 h-10 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-all font-black"
          >
-           <ArrowLeft size={24} strokeWidth={2.5} />
+           <ArrowLeft size={20} strokeWidth={2.5} />
          </button>
          <h1 className="text-xl font-black tracking-tight text-[#0B1A2C]">Trip Members</h1>
          <button 

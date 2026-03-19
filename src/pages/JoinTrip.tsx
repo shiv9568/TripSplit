@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useEffect } from 'react';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Plane, ArrowLeft, ArrowRight, ShieldCheck, Sparkles, UserPlus } from 'lucide-react';
 import { tripApi } from '../utils/api';
 import { useApp } from '../context/AppContext';
@@ -7,18 +7,28 @@ import { useToast } from '../components/Toast';
 
 export default function JoinTrip() {
   const navigate = useNavigate();
-  const { currentUser } = useApp();
+  const [searchParams] = useSearchParams();
+  const { currentUser, setCurrentUser } = useApp();
   const { showToast } = useToast();
-  const [joinCode, setJoinCode] = useState('');
+  
+  const [joinCode, setJoinCode] = useState(searchParams.get('code') || '');
+  const [guestName, setGuestName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleJoin = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!joinCode || !currentUser) return;
+    const finalName = currentUser || guestName.trim();
+    if (!joinCode || !finalName) {
+      showToast('Please provide an invite code and your name.', 'error');
+      return;
+    }
     
     setIsSubmitting(true);
     try {
-      const { data } = await tripApi.join(joinCode, currentUser);
+      if (!currentUser && guestName.trim()) {
+        setCurrentUser(guestName.trim());
+      }
+      const { data } = await tripApi.join(joinCode, finalName);
       showToast('Successfully joined the trip!', 'success');
       navigate(`/trip/${data._id}`);
     } catch {
@@ -37,10 +47,10 @@ export default function JoinTrip() {
       {/* Header */}
       <header className="relative z-10 px-6 py-6 max-w-2xl mx-auto w-full flex items-center justify-between">
         <button 
-          onClick={() => navigate('/dashboard')}
-          className="w-12 h-12 bg-white rounded-2xl shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors"
+          onClick={() => navigate(-1)}
+          className="w-10 h-10 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-all font-black"
         >
-          <ArrowLeft size={24} strokeWidth={2.5} />
+          <ArrowLeft size={20} strokeWidth={2.5} />
         </button>
         <div className="flex items-center gap-2">
            <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-100">
@@ -67,18 +77,35 @@ export default function JoinTrip() {
           </div>
 
           <form onSubmit={handleJoin} className="space-y-8">
-             <div className="relative group">
-                <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-teal-400 rounded-3xl blur opacity-10 group-focus-within:opacity-25 transition-opacity" />
-                <input 
-                  type="text"
-                  value={joinCode}
-                  onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
-                  placeholder="EX: TRP001"
-                  maxLength={6}
-                  className="relative w-full bg-white border-2 border-slate-100 rounded-3xl px-8 py-7 text-3xl font-black text-center tracking-[0.4em] text-[#0B1A2C] placeholder:text-slate-200 placeholder:tracking-normal focus:outline-none focus:border-indigo-500 shadow-xl transition-all font-mono"
-                  required
-                  autoFocus
-                />
+             <div className="space-y-4">
+               {!currentUser && (
+                 <div className="relative group">
+                    <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-teal-400 rounded-3xl blur opacity-10 group-focus-within:opacity-25 transition-opacity" />
+                    <input 
+                      type="text"
+                      value={guestName}
+                      onChange={(e) => setGuestName(e.target.value)}
+                      placeholder="Your full name"
+                      className="relative w-full bg-white border-2 border-slate-100 rounded-3xl px-8 py-5 text-xl font-bold text-center text-[#0B1A2C] placeholder:text-slate-300 focus:outline-none focus:border-indigo-500 shadow-xl transition-all"
+                      required
+                      autoFocus
+                    />
+                 </div>
+               )}
+
+               <div className="relative group">
+                  <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-teal-400 rounded-3xl blur opacity-10 group-focus-within:opacity-25 transition-opacity" />
+                  <input 
+                    type="text"
+                    value={joinCode}
+                    onChange={(e) => setJoinCode(e.target.value.toUpperCase())}
+                    placeholder="EX: TRP001"
+                    maxLength={6}
+                    className="relative w-full bg-white border-2 border-slate-100 rounded-3xl px-8 py-7 text-3xl font-black text-center tracking-[0.4em] text-[#0B1A2C] placeholder:text-slate-200 placeholder:tracking-normal focus:outline-none focus:border-indigo-500 shadow-xl transition-all font-mono"
+                    required
+                    autoFocus={!!currentUser}
+                  />
+               </div>
              </div>
 
              <button 

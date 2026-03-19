@@ -1,105 +1,49 @@
-import { useState, useEffect, useCallback, memo } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
-import { Plus, Users, ArrowRight, Clock, Trash2, Copy, Plane, LayoutDashboard, History, Settings, ReceiptText } from 'lucide-react';
-import { tripApi } from '../utils/api';
+import { useState, useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { 
+  Plus, Users, Home, LayoutDashboard, FileText, User as UserIcon, 
+  CheckCircle2, Handshake, X, ArrowLeft
+} from 'lucide-react';
+import { tripApi, expenseApi } from '../utils/api';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../components/Toast';
-import type { Trip } from '../types';
+import type { Trip, Expense, TripSummary } from '../types';
 
-const TripCard = memo(function TripCard({ trip, onDelete }: { trip: Trip; onDelete: (id: string) => void }) {
-  const { showToast } = useToast();
-  
-  const copyCode = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    navigator.clipboard.writeText(trip.inviteCode);
-    showToast('Invite code copied!', 'success');
-  };
+const CATEGORIES = [
+  { value: 'food', label: 'Food', icon: '🍔', bg: 'bg-orange-100', text: 'text-orange-600' },
+  { value: 'petrol', label: 'Petrol', icon: '⛽', bg: 'bg-amber-100', text: 'text-amber-600' },
+  { value: 'hotel', label: 'Hotel', icon: '🏨', bg: 'bg-indigo-100', text: 'text-indigo-600' },
+  { value: 'travel', label: 'Travel', icon: '✈️', bg: 'bg-blue-100', text: 'text-blue-600' },
+  { value: 'tickets', label: 'Tickets', icon: '🎟️', bg: 'bg-pink-100', text: 'text-pink-600' },
+  { value: 'entertainment', label: 'Entertainment', icon: '🎉', bg: 'bg-purple-100', text: 'text-purple-600' },
+  { value: 'shopping', label: 'Shopping', icon: '🛍️', bg: 'bg-teal-100', text: 'text-teal-600' },
+  { value: 'other', label: 'Other', icon: '📦', bg: 'bg-gray-100', text: 'text-gray-600' },
+];
 
-  const handleDelete = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-    onDelete(trip._id);
-  };
-
-  return (
-    <Link
-      to={`/trip/${trip._id}`}
-      className="group bg-white rounded-3xl p-5 border border-slate-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 relative overflow-hidden"
-    >
-      <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-full blur-3xl -mr-16 -mt-16 group-hover:bg-indigo-100/50 transition-colors" />
-      
-      <div className="relative z-10 space-y-4">
-        <div className="flex items-start justify-between">
-          <div className="w-14 h-14 bg-gradient-to-br from-indigo-500 to-indigo-600 rounded-2xl flex items-center justify-center text-white shadow-lg shrink-0 transform -rotate-3 group-hover:rotate-0 transition-transform">
-            <Plane size={24} />
-          </div>
-          <button
-            onClick={handleDelete}
-            className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-          >
-            <Trash2 size={18} />
-          </button>
-        </div>
-
-        <div className="space-y-1">
-          <h3 className="text-xl font-black text-[#0B1A2C] tracking-tight group-hover:text-indigo-600 transition-colors truncate">
-            {trip.name}
-          </h3>
-          <div className="flex items-center gap-1.5 text-slate-400 font-bold text-xs uppercase tracking-wider">
-            <Clock size={12} strokeWidth={3} />
-            {new Date(trip.createdAt).toLocaleDateString('en-IN', { month: 'short', day: 'numeric', year: 'numeric' })}
-          </div>
-        </div>
-
-        <div className="flex items-center justify-between pt-2">
-          <div className="flex -space-x-2 overflow-hidden">
-            {trip.members.slice(0, 3).map((m, i) => (
-              <div 
-                key={i} 
-                className={`w-8 h-8 rounded-full border-2 border-white flex items-center justify-center text-[10px] font-black text-white shadow-sm ring-1 ring-slate-100 ${
-                  ['bg-indigo-400', 'bg-teal-400', 'bg-emerald-400', 'bg-orange-400'][i % 4]
-                }`}
-              >
-                {m.name[0]?.toUpperCase()}
-              </div>
-            ))}
-            {trip.members.length > 3 && (
-              <div className="w-8 h-8 rounded-full bg-slate-100 border-2 border-white flex items-center justify-center text-[10px] font-black text-slate-400 shadow-sm ring-1 ring-slate-100">
-                +{trip.members.length - 3}
-              </div>
-            )}
-          </div>
-          
-          <div className="flex items-center gap-2">
-            <button 
-              onClick={copyCode}
-              className="px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-black text-[#0B1A2C] hover:bg-slate-100 flex items-center gap-1.5 transition-colors"
-            >
-              <Copy size={12} /> {trip.inviteCode}
-            </button>
-            <div className="w-8 h-8 bg-indigo-50 text-indigo-600 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-              <ArrowRight size={18} strokeWidth={3} />
-            </div>
-          </div>
-        </div>
-      </div>
-    </Link>
-  );
-});
+const getCategoryInfo = (value: string) => {
+  return CATEGORIES.find(c => c.value === value) || CATEGORIES[CATEGORIES.length - 1];
+};
 
 export default function Dashboard() {
   const { currentUser } = useApp();
   const navigate = useNavigate();
   const { showToast } = useToast();
+  
   const [trips, setTrips] = useState<Trip[]>([]);
+  const [activeTripId, setActiveTripId] = useState<string | null>(null);
+  const [expenses, setExpenses] = useState<Expense[]>([]);
+  const [summary, setSummary] = useState<TripSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [showInviteModal, setShowInviteModal] = useState(false);
 
-  const loadTrips = useCallback(async () => {
+  const loadInitialData = useCallback(async () => {
     setIsLoading(true);
     try {
       const { data } = await tripApi.getAll();
       setTrips(data);
+      if (data.length > 0) {
+        setActiveTripId(data[0]._id);
+      }
     } catch {
       showToast('Failed to load trips', 'error');
     } finally {
@@ -108,126 +52,296 @@ export default function Dashboard() {
   }, [showToast]);
 
   useEffect(() => {
-    loadTrips();
-  }, [loadTrips]);
+    loadInitialData();
+  }, [loadInitialData]);
 
-  const handleDeleteTrip = async (tripId: string) => {
-    if (!confirm('Delete this trip?')) return;
+  const loadActiveTripData = useCallback(async (tripId: string) => {
     try {
-      await tripApi.delete(tripId);
-      showToast('Trip deleted', 'success');
-      loadTrips();
+      const [expensesRes, summaryRes] = await Promise.all([
+        expenseApi.getAll(tripId),
+        expenseApi.getSummary(tripId),
+      ]);
+      setExpenses(expensesRes.data);
+      setSummary(summaryRes.data);
     } catch {
-      showToast('Failed to delete', 'error');
+      showToast('Failed to load active trip details', 'error');
     }
+  }, [showToast]);
+
+  useEffect(() => {
+    if (activeTripId) {
+      loadActiveTripData(activeTripId);
+    }
+  }, [activeTripId, loadActiveTripData]);
+
+  const copyCode = (code: string) => {
+    navigator.clipboard.writeText(code);
+    showToast('Invite code copied!', 'success');
   };
 
+  const activeTrip = trips.find(t => t._id === activeTripId);
+
+  // Exact UI styles based on the provided image
   return (
-    <div className="min-h-screen bg-[#f8fbfa] font-sans text-slate-900 pb-32 overflow-x-hidden">
-      {/* Premium Header */}
-      <header className="fixed top-0 left-0 right-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-100 px-6 py-4">
-        <div className="max-w-7xl mx-auto flex items-center justify-between">
+    <div className="min-h-screen bg-gradient-to-br from-[#F4FBFA] to-[#EAF5F5] font-sans text-slate-900 pb-32">
+      {/* Top Navigation */}
+      {/* Top Navigation */}
+      <header className="px-6 py-6 pb-2 z-10 relative">
+        <div className="flex items-center justify-between mb-6">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
-              <LayoutDashboard className="text-white w-6 h-6" />
-            </div>
-            <div>
-              <h1 className="text-xl font-black text-[#0B1A2C] tracking-tight">Dashboard</h1>
-              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{currentUser}</p>
-            </div>
-          </div>
-          <button className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center overflow-hidden hover:ring-2 hover:ring-indigo-100 transition-all">
-            <div className="text-sm font-black text-indigo-600">{currentUser?.[0]?.toUpperCase()}</div>
-          </button>
-        </div>
-      </header>
-
-      <main className="max-w-7xl mx-auto px-6 pt-28 space-y-12">
-        {/* Statistics / Summary Hero */}
-        <section className="relative group">
-          <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-800 rounded-[2.5rem] shadow-2xl shadow-indigo-200 transform md:-rotate-1 group-hover:rotate-0 transition-transform duration-500" />
-          <div className="relative p-8 md:p-12 flex flex-col md:flex-row items-center justify-between gap-8">
-            <div className="space-y-6 text-center md:text-left">
-              <div className="inline-flex items-center gap-2 bg-white/10 text-indigo-100 px-4 py-2 rounded-full text-xs font-black uppercase tracking-widest backdrop-blur-lg">
-                <Sparkles size={14} className="text-teal-300" /> Active Summary
-              </div>
-              <h2 className="text-4xl md:text-6xl font-black text-white leading-tight">
-                Hey {currentUser?.split(' ')[0]}, <br />
-                Ready to <span className="text-teal-300 italic">explore?</span>
-              </h2>
-              <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                <button onClick={() => navigate('/dashboard')} className="bg-[#0B1A2C] text-white px-8 py-4 rounded-2xl font-black text-sm flex items-center gap-2 hover:bg-slate-800 transition-colors shadow-xl active:scale-95">
-                  <Plus size={20} /> Create New Trip
-                </button>
-                <Link to="/join" className="bg-white text-indigo-600 px-8 py-4 rounded-2xl font-black text-sm flex items-center gap-2 hover:bg-slate-50 transition-colors shadow-lg active:scale-95">
-                  <Users size={20} /> Join Trip
-                </Link>
-              </div>
-            </div>
-            {/* Quick Stats Grid */}
-            <div className="grid grid-cols-2 gap-4 w-full md:w-auto">
-              {[
-                { label: 'Total Trips', value: trips.length, color: 'text-indigo-200' },
-                { label: 'Total Spent', value: '₹0', color: 'text-teal-300' },
-              ].map((stat, i) => (
-                <div key={i} className="bg-white/5 backdrop-blur-xl border border-white/10 p-6 rounded-3xl space-y-1 min-w-[140px]">
-                  <p className="text-[10px] font-black text-indigo-100 uppercase tracking-widest">{stat.label}</p>
-                  <p className={`text-2xl font-black ${stat.color}`}>{stat.value}</p>
-                </div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Trips List Section */}
-        <section className="space-y-8 pb-12">
-          <div className="flex items-center justify-between">
-            <h2 className="text-2xl font-black text-[#0B1A2C] flex items-center gap-3 tracking-tight">
-              Your Trips <span className="text-slate-300">/</span> <span className="text-indigo-600 italic font-medium">{trips.length}</span>
-            </h2>
+            <button 
+              onClick={() => navigate('/')}
+              className="w-10 h-10 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors"
+            >
+              <ArrowLeft size={20} strokeWidth={2.5} />
+            </button>
+            <h1 className="text-[22px] font-black tracking-tight text-[#002222]">
+              TripSplit
+            </h1>
           </div>
           
-          {isLoading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[1, 2, 3].map(i => (
-                <div key={i} className="h-[200px] bg-slate-100 rounded-3xl animate-pulse" />
-              ))}
+          <div className="flex items-center gap-3">
+             <button 
+               onClick={() => navigate('/create-trip')}
+               className="w-10 h-10 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-teal-600 hover:bg-teal-50 transition-all active:scale-95"
+             >
+               <Plus size={22} strokeWidth={3} />
+             </button>
+             
+             <div className="relative cursor-pointer hover:opacity-90 transition-opacity" onClick={() => navigate('/profile')}>
+                <div className="w-10 h-10 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center overflow-hidden shadow-sm">
+                   <img src={`https://ui-avatars.com/api/?name=${currentUser || 'User'}&background=c7d2fe&color=3730a3&bold=true`} alt="User avatar" className="w-full h-full object-cover" />
+                </div>
+                <div className="absolute -top-1 -right-1 w-5 h-5 bg-teal-500 text-white text-[10px] font-bold flex items-center justify-center rounded-full border-2 border-white">
+                   {trips.length}
+                </div>
+             </div>
+          </div>
+        </div>
+
+        {/* Dynamic Trip Tabs */}
+        {trips.length > 0 && (
+          <div className="flex gap-2 overflow-x-auto no-scrollbar -mx-6 px-6 pb-2">
+            {trips.map(t => (
+              <button 
+                key={t._id}
+                onClick={() => setActiveTripId(t._id)}
+                className={`flex-shrink-0 px-5 py-2.5 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all duration-300 ${
+                  activeTripId === t._id 
+                  ? 'bg-[#002222] text-white shadow-xl shadow-[#002222]/10 scale-105' 
+                  : 'bg-white text-slate-400 border border-slate-100 hover:border-teal-200'
+                }`}
+              >
+                {t.name}
+              </button>
+            ))}
+          </div>
+        )}
+      </header>
+
+      <main className="max-w-md mx-auto px-6 space-y-6 relative z-10">
+        
+        {/* Loading State or Dashboard Content */}
+        {isLoading ? (
+          <div className="flex justify-center items-center py-20">
+            <div className="w-8 h-8 border-4 border-teal-500/20 border-t-teal-500 rounded-full animate-spin" />
+          </div>
+        ) : (
+          <>
+            {/* Trip Summary Card */}
+            {activeTrip ? (
+          <div className="bg-white rounded-[1.5rem] p-6 shadow-[0_8px_30px_rgb(20,184,166,0.12)] border border-teal-50 space-y-6 relative overflow-hidden">
+            {/* Subtle glow inside card */}
+            <div className="absolute -right-20 -bottom-20 w-40 h-40 bg-teal-100 blur-[50px] rounded-full pointer-events-none" />
+            
+            <div className="relative z-10">
+              <p className="text-sm font-bold text-slate-500">Trip Summary</p>
+              <h2 className="text-2xl font-black text-[#002222] mt-1 tracking-tight">{activeTrip.name}</h2>
             </div>
-          ) : trips.length === 0 ? (
-            <div className="bg-white rounded-[2.5rem] p-12 text-center border-2 border-dashed border-slate-100">
-               <div className="w-20 h-20 bg-indigo-50 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <Plane size={32} className="text-indigo-400 transform -rotate-12" />
+            
+            <div className="flex items-center justify-between pt-2 relative z-10">
+              <div className="space-y-1">
+                <p className="text-xs font-bold text-slate-600">Trip Total Spent</p>
+                <p className="text-2xl font-black text-[#002222] tracking-tight">
+                  ₹{summary ? summary.totalAmount.toLocaleString() : '0'}
+                </p>
+              </div>
+              <div className="space-y-1 text-right">
+                <p className="text-xs font-bold text-slate-600">My Balance</p>
+                <div className="flex items-center justify-end gap-1.5 text-emerald-500 font-bold backdrop-blur-sm bg-emerald-50/50 px-2 py-0.5 rounded-lg border border-emerald-100">
+                  <CheckCircle2 size={16} className="text-emerald-500 fill-emerald-100" />
+                  <span className="text-lg font-black tracking-tight">+₹1,200</span>
+                  <span className="text-[10px] uppercase text-emerald-600">(to collect)</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        ) : (
+          <div className="bg-white rounded-[1.5rem] p-6 shadow-sm border border-slate-100 text-center space-y-4">
+             <div className="text-slate-400">No active trips</div>
+             <button onClick={() => navigate('/create-trip')} className="bg-teal-600 text-white px-6 py-2 rounded-xl font-bold">Create Trip</button>
+          </div>
+        )}
+
+        {/* Action Buttons */}
+        {activeTrip && (
+          <div className="grid grid-cols-3 gap-3">
+            <button 
+              onClick={() => navigate(`/trip/${activeTrip._id}/add-expense`)}
+              className="bg-teal-600 hover:bg-teal-700 active:scale-95 transition-all outline-none rounded-2xl flex flex-col items-center justify-center p-4 shadow-lg shadow-teal-600/20 text-white gap-2"
+            >
+              <div className="w-8 h-8 rounded-full border-2 border-white/20 flex items-center justify-center mb-1">
+                <Plus size={20} className="text-white" strokeWidth={3} />
+              </div>
+              <span className="text-xs font-black tracking-tight">Add Expense</span>
+            </button>
+
+            <button 
+              onClick={() => navigate(`/trip/${activeTrip._id}/settlements`)}
+              className="bg-white hover:bg-slate-50 active:scale-95 transition-all outline-none rounded-2xl flex flex-col items-center justify-center p-4 shadow-sm border border-slate-100 text-[#002222] gap-2"
+            >
+              <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center mb-1">
+                <Handshake size={20} className="text-emerald-600" />
+              </div>
+              <span className="text-xs font-black tracking-tight">Settle Up</span>
+            </button>
+
+            <button 
+              onClick={() => setShowInviteModal(true)}
+              className="bg-white hover:bg-slate-50 active:scale-95 transition-all outline-none rounded-2xl flex flex-col items-center justify-center p-4 shadow-sm border border-slate-100 text-[#002222] gap-2"
+            >
+              <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center mb-1">
+                <Users size={20} className="text-blue-600" />
+              </div>
+              <span className="text-xs font-black tracking-tight text-center leading-tight">Invite Members</span>
+            </button>
+          </div>
+        )}
+
+        {/* Recent Activity */}
+        <div className="bg-white rounded-[1.5rem] shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-slate-100 overflow-hidden">
+          <div className="px-6 py-5 border-b border-slate-50">
+            <h2 className="text-lg font-black text-[#002222] tracking-tight">Recent Activity</h2>
+          </div>
+          
+          <div className="p-4 space-y-1">
+            {expenses.length === 0 ? (
+               <div className="text-center py-8 text-slate-400 font-bold text-sm">
+                 No recent activity to show
                </div>
-               <h3 className="text-2xl font-black text-[#0B1A2C] mb-3">No trips yet!</h3>
-               <p className="text-slate-400 font-bold mb-8 max-w-xs mx-auto">Create your first trip or join one using an invite code to get started.</p>
-               <button onClick={() => {}} className="bg-indigo-600 text-white px-10 py-5 rounded-2xl font-black text-sm shadow-2xl hover:bg-indigo-700 transition-colors">
-                  Get Started →
-               </button>
+            ) : (
+              expenses.slice(0, 5).map((exp, idx) => {
+                const category = getCategoryInfo(exp.category);
+                const splitStr = `split ${activeTrip?.members.length || 1}`;
+                
+                return (
+                  <div key={exp._id} className="flex items-center gap-4 p-3 hover:bg-slate-50 rounded-2xl transition-colors cursor-pointer border-b border-slate-50 last:border-0 relative">
+                    <div className={`w-12 h-12 rounded-full ${category.bg} flex items-center justify-center text-xl shrink-0`}>
+                      {category.icon}
+                    </div>
+                    
+                    <div className="flex-1 min-w-0">
+                      <p className="font-bold text-[#002222] truncate text-[15px]">{exp.title}</p>
+                      <div className="flex items-center gap-1.5 text-xs text-slate-500 font-medium mt-0.5 line-clamp-1">
+                        paid by {exp.paidBy.split(' ')[0]} - 
+                        <img 
+                          src={`https://ui-avatars.com/api/?name=${exp.paidBy}&background=random&size=20`} 
+                          alt="avatar" 
+                          className="w-4 h-4 rounded-full inline-block object-cover -mb-0.5" 
+                        />
+                      </div>
+                    </div>
+                    
+                    <div className="text-right shrink-0 relative z-10">
+                      <p className="font-black text-[#002222] text-[15px]">
+                        {idx % 2 === 0 ? '' : '-'}₹{Math.round(exp.amount)}
+                      </p>
+                      <p className="text-[11px] text-slate-400 font-medium">
+                        ₹{Math.round(exp.amount / (activeTrip?.members.length || 1))} - {splitStr}
+                      </p>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+        </>
+        )}
+
+        {/* Invite QR Modal */}
+        {showInviteModal && activeTrip && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-sm animate-in fade-in duration-200">
+            <div className="bg-white rounded-3xl p-8 max-w-sm w-full shadow-2xl space-y-6 relative animate-in zoom-in-95 duration-200">
+              <button 
+                onClick={() => setShowInviteModal(false)}
+                className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center rounded-full bg-slate-100 text-slate-500 hover:bg-slate-200"
+              >
+                <X size={16} strokeWidth={3} />
+              </button>
+              <div className="text-center space-y-2">
+                <h3 className="text-2xl font-black text-[#002222]">Invite Friends</h3>
+                <p className="text-sm font-bold text-slate-400">Scan this QR code or use the code below to join!</p>
+              </div>
+              
+              <div className="bg-slate-50 p-4 rounded-2xl border-2 border-slate-100 flex justify-center">
+                <img 
+                  src={`https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(window.location.origin + '/join?code=' + activeTrip.inviteCode)}`}
+                  alt="QR Code"
+                  className="w-48 h-48 rounded-lg shadow-sm"
+                />
+              </div>
+
+              <div className="text-center">
+                <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Or Share via Code</p>
+                <div 
+                  onClick={() => copyCode(activeTrip.inviteCode)}
+                  className="bg-slate-100 py-4 rounded-2xl cursor-pointer hover:bg-slate-200 transition-colors active:scale-95"
+                >
+                  <span className="font-mono text-3xl font-black tracking-[0.2em] text-teal-600">{activeTrip.inviteCode}</span>
+                </div>
+                <p className="text-xs font-bold text-slate-400 mt-2">Tap code to copy</p>
+              </div>
             </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {trips.map(trip => (
-                <TripCard key={trip._id} trip={trip} onDelete={handleDeleteTrip} />
-              ))}
-            </div>
-          )}
-        </section>
+          </div>
+        )}
+
       </main>
 
-      {/* Global Bottom Navigation (Mobile + Tablet) */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 px-6 pb-6">
-        <div className="max-w-md mx-auto bg-[#0B1A2C] rounded-[2rem] p-2 flex items-center justify-around shadow-2xl border border-white/5 ring-8 ring-indigo-50/50">
-          <button onClick={() => navigate('/dashboard')} className="p-4 bg-indigo-600 rounded-2xl text-white shadow-lg shadow-indigo-500/30 ring-1 ring-white/20 transition-all scale-110">
-            <LayoutDashboard size={20} strokeWidth={2.5} />
+      {/* Global Bottom Navigation (White Theme based on image) */}
+      <nav className="fixed bottom-0 left-0 right-0 z-50 px-0 pb-0">
+        <div className="bg-white flex items-center justify-around shadow-[0_-10px_40px_rgb(0,0,0,0.05)] border-t border-slate-100">
+          <button 
+            onClick={() => navigate('/')} 
+            className="flex-1 py-4 flex flex-col items-center gap-1 text-slate-400 hover:text-slate-700 transition-colors"
+          >
+            <Home size={22} strokeWidth={2.5} />
+            <span className="text-[10px] font-bold">Trips</span>
           </button>
-          <button onClick={() => navigate('/history')} className="p-4 text-slate-400 hover:text-white transition-colors group">
-            <History size={20} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" />
+          
+          <button 
+            onClick={() => navigate('/dashboard')}
+            className="flex-1 py-4 flex flex-col items-center gap-1 text-teal-600 relative"
+          >
+            <LayoutDashboard size={22} strokeWidth={2.5} />
+            <span className="text-[10px] font-bold">Dashboard</span>
+            <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-8 h-1 bg-teal-600 rounded-t-full" />
           </button>
-          <button onClick={() => navigate('/dashboard')} className="p-4 text-slate-400 hover:text-indigo-400 transition-colors group">
-            <ReceiptText size={20} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" />
+          
+          <button 
+            onClick={() => activeTrip && navigate(`/trip/${activeTrip._id}/summary`)} 
+            className="flex-1 py-4 flex flex-col items-center gap-1 text-slate-400 hover:text-slate-700 transition-colors"
+          >
+            <FileText size={22} strokeWidth={2.5} />
+            <span className="text-[10px] font-bold">Reports</span>
           </button>
-          <button className="p-4 text-slate-400 hover:text-white transition-colors group">
-            <Settings size={20} strokeWidth={2.5} className="group-hover:scale-110 transition-transform" />
+          
+          <button 
+            onClick={() => navigate('/profile')} 
+            className="flex-1 py-4 flex flex-col items-center gap-1 text-slate-400 hover:text-slate-700 transition-colors"
+          >
+            <UserIcon size={22} strokeWidth={2.5} />
+            <span className="text-[10px] font-bold">Profile</span>
           </button>
         </div>
       </nav>
@@ -235,21 +349,3 @@ export default function Dashboard() {
   );
 }
 
-const Sparkles = memo(function Sparkles({ className, size }: { className?: string; size?: number }) {
-  return (
-    <svg 
-      className={className} 
-      width={size || 24} 
-      height={size || 24} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      stroke="currentColor" 
-      strokeWidth="2.5" 
-      strokeLinecap="round" 
-      strokeLinejoin="round"
-    >
-      <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z"/>
-      <path d="m5 3 1 1"/><path d="m19 19 1 1"/><path d="m5 19 1-1"/><path d="m19 5 1-1"/>
-    </svg>
-  );
-});
