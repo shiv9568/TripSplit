@@ -1,9 +1,6 @@
 import axios from 'axios';
 
-// Dynamically use the same hostname the page was loaded from.
-// This makes API calls work both on localhost AND when opened
-// from a phone/tablet on the same WiFi (using your PC's local IP).
-const API_URL = `http://${window.location.hostname}:5000/api`;
+const API_URL = 'https://tripsplit-server.onrender.com/api';
 
 const api = axios.create({
   baseURL: API_URL,
