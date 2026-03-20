@@ -9,7 +9,7 @@ import {
 import { tripApi, expenseApi } from '../utils/api';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../components/Toast';
-import type { Trip, Expense, TripSummary } from '../types';
+import type { Trip, Expense, TripSummary, Member } from '../types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -108,7 +108,7 @@ export default function TripDetail() {
 
       // Check if current user is still authorized (member or creator)
       if (currentUser) {
-         const isMember = updatedTrip.members.some((m: any) => m.name === currentUser?.name || m.email === currentUser?.email);
+         const isMember = updatedTrip.members.some((m: Member) => m.name === currentUser?.name || m.email === currentUser?.email);
          const isAdmin = updatedTrip.createdBy === currentUser?.email || updatedTrip.createdBy === currentUser?.name;
          if (!isMember && !isAdmin) {
             showToast('You are no longer a member of this trip.', 'info');
@@ -280,9 +280,8 @@ export default function TripDetail() {
     if (!window.confirm('Are you sure you want to leave this group?')) return;
     try {
       if (!currentUser) return;
-      await tripApi.leave(id!, currentUser);
+      await tripApi.leave(id!, currentUser.name);
       showToast('You left the group', 'info');
-      setCurrentUser('');
       setLastTripId('');
       navigate('/');
     } catch {
