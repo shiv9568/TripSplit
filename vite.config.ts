@@ -2,8 +2,14 @@ import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
-// https://vite.dev/config/
+const API_URL = process.env.NODE_ENV === 'production' 
+  ? 'https://tripsplit-server.onrender.com/api'
+  : 'https://tripsplit-server.onrender.com/api'
+
 export default defineConfig({
+  define: {
+    VITE_API_URL: JSON.stringify(API_URL),
+  },
   plugins: [
     react(),
     VitePWA({
@@ -30,9 +36,8 @@ export default defineConfig({
     })
   ],
   server: {
-    host: '0.0.0.0',  // expose to all network interfaces (WiFi, LAN)
+    host: '0.0.0.0',
     port: 5173,
     strictPort: true,
   },
 })
-
