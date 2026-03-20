@@ -735,7 +735,7 @@ export default function TripDetail() {
                     </div>
 
                     {/* Personal Management */}
-                    {trip?.members.find(m => m.name === currentUser?.name || m.email === currentUser?.email) && (
+                    {currentUser && trip?.members.find(m => m.name === currentUser.name || m.email === currentUser.email) && (
                       <div className="pt-2 px-4">
                          <button 
                            onClick={handleLeave}
