@@ -47,12 +47,12 @@ export default function AuthPage() {
     setError('');
 
     try {
-      const endpoint = isLogin ? '/api/users/login' : '/api/users/register';
+      const endpoint = isLogin ? '/users/login' : '/users/register';
       const body = isLogin 
         ? { email, password } 
         : { name, email, password };
 
-      const baseUrl = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000`;
+      const baseUrl = import.meta.env.VITE_API_URL || 'https://tripsplit-server.onrender.com/api';
       const response = await fetch(`${baseUrl}${endpoint}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
