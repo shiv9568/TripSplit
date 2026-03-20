@@ -599,7 +599,7 @@ export default function TripDetail() {
               {tab === 'members' && (
                  <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
                     {/* Admin Moderation: Pending Requests */}
-                    {currentUser === trip?.createdBy && trip?.pendingMembers && (trip.pendingMembers as any[]).length > 0 && (
+                    {(currentUser?.name === trip?.createdBy || currentUser?.email === trip?.createdBy) && trip?.pendingMembers && (trip.pendingMembers as any[]).length > 0 && (
                       <div className="bg-amber-50 rounded-[2.5rem] p-8 border border-amber-100 shadow-inner space-y-5">
                         <div className="flex items-center gap-3 text-amber-900">
                           <Plus className="w-5 h-5" />
@@ -638,10 +638,10 @@ export default function TripDetail() {
                     )}
  
                    {/* Manual Add Member (Admin Only) */}
-                   {currentUser === trip?.createdBy && (
-                     <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-4">
-                        <div className="flex items-center justify-between">
-                           <h3 className="text-xl font-black text-[#1a1035]">Add New Traveler</h3>
+{(currentUser?.name === trip?.createdBy || currentUser?.email === trip?.createdBy) && (
+                      <div className="bg-white rounded-[2.5rem] p-8 border border-slate-100 shadow-sm space-y-4">
+                         <div className="flex items-center justify-between">
+                            <h3 className="text-xl font-black text-[#1a1035]">Add New Traveler</h3>
                            <button 
                              onClick={() => setShowAddMember(!showAddMember)}
                              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${showAddMember ? 'bg-rose-50 text-rose-500 rotate-45' : 'bg-indigo-600 text-white shadow-lg shadow-indigo-100'}`}
