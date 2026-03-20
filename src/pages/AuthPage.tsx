@@ -1,149 +1,321 @@
-import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Globe, ArrowRight, Mail, Lock, User, ArrowLeft } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Plane, MapPin, Globe } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function AuthPage() {
   const navigate = useNavigate();
-  const { setCurrentUser } = useApp();
-  const [isLogin, setIsLogin] = useState(true);
+  const location = useLocation();
+  const { setCurrentUser, currentUser, setToken } = useApp();
+
+  // Redirect destination passed via navigate('/authUser', { state: { from: '/create-trip' } })
+  const state = location.state as { from?: string; initialMode?: 'login' | 'signup' };
+  const redirectTo = state?.from || '/trips';
+
+  // Already logged in — send them straight to their destination
+  useEffect(() => {
+    if (currentUser) {
+      navigate(redirectTo, { replace: true });
+    }
+  }, [currentUser, navigate, redirectTo]);
+
+  const [isLogin, setIsLogin] = useState(state?.initialMode !== 'signup');
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [animating, setAnimating] = useState(false);
 
-  const handleAuth = (e: React.FormEvent) => {
+  useEffect(() => {
+    document.title = isLogin ? 'Sign In | TripSplit' : 'Create Account | TripSplit';
+  }, [isLogin]);
+
+  const switchMode = () => {
+    setAnimating(true);
+    setTimeout(() => {
+      setIsLogin(prev => !prev);
+      setAnimating(false);
+    }, 200);
+  };
+
+  const [error, setError] = useState('');
+
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (name || email) {
-      setCurrentUser(name || email.split('@')[0]);
-      navigate('/dashboard');
+    setLoading(true);
+    setError('');
+
+    try {
+      const endpoint = isLogin ? '/api/users/login' : '/api/users/register';
+      const body = isLogin 
+        ? { email, password } 
+        : { name, email, password };
+
+      const baseUrl = import.meta.env.VITE_API_URL || `http://${window.location.hostname}:5000`;
+      const response = await fetch(`${baseUrl}${endpoint}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Authentication failed');
+      }
+
+      // data contains { user: { id, name, email }, token }
+      setToken(data.token);
+      setCurrentUser(data.user);
+      
+      // Success! 
+      navigate(redirectTo, { replace: true });
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const handleGoogleLogin = () => {
-    setCurrentUser('Google User');
-    navigate('/dashboard');
-  };
-
   return (
-    <div className="min-h-screen bg-[#f8fbfa] font-sans flex items-center justify-center p-6 relative overflow-hidden">
-      {/* Dynamic Backgrounds */}
-      <div className="absolute top-[-10%] left-[-10%] w-[500px] h-[500px] bg-indigo-100 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[-10%] right-[-10%] w-[400px] h-[400px] bg-teal-50 rounded-full blur-[100px] pointer-events-none" />
+    <div className="min-h-screen flex font-sans" style={{ background: '#FAF7F4' }}>
 
-      <div className="w-full max-w-md relative z-10 animate-in fade-in zoom-in-95 duration-500">
-        <button 
-          onClick={() => navigate('/')}
-          className="absolute top-6 left-6 w-10 h-10 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-slate-400 hover:text-indigo-600 transition-colors z-20"
-        >
-          <ArrowLeft size={20} strokeWidth={2.5} />
-        </button>
+      {/* ── Left Panel: Decorative (desktop only) ── */}
+      <div
+        className="hidden lg:flex flex-col justify-between w-[45%] relative overflow-hidden p-12"
+        style={{ background: 'linear-gradient(145deg, #eef2ff 0%, #e0e7ff 60%, #c7d2fe 100%)' }}
+      >
+        {/* Arch shape */}
+        <div
+          className="absolute top-12 right-0 w-72 h-96 rounded-l-full"
+          style={{ background: 'rgba(255,255,255,0.35)', backdropFilter: 'blur(12px)' }}
+        />
+        <div
+          className="absolute bottom-32 -left-12 w-56 h-56 rounded-full"
+          style={{ background: 'rgba(255,255,255,0.2)' }}
+        />
+        {/* Dot grid */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage: 'radial-gradient(circle, #a5b4fc 1px, transparent 1px)',
+            backgroundSize: '24px 24px',
+            opacity: 0.4,
+          }}
+        />
 
-        <div className="text-center mb-8 space-y-3">
-          <div className="w-16 h-16 bg-white rounded-3xl shadow-xl border border-slate-100 flex items-center justify-center mx-auto transform -rotate-6 hover:rotate-0 transition-transform">
-            <Globe className="w-8 h-8 text-indigo-600" />
+        {/* Logo */}
+        <div className="relative z-10 flex items-center gap-3">
+          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
+            <Globe className="text-white w-5 h-5" />
           </div>
-          <h1 className="text-3xl font-black text-[#0B1A2C] tracking-tighter">
-            {isLogin ? 'Welcome Back' : 'Create Account'}
-          </h1>
-          <p className="text-slate-400 font-bold text-sm">
-            {isLogin ? 'Enter your details to access your trips.' : 'Join TripSplit to travel smarter.'}
-          </p>
+          <span className="text-2xl font-black text-indigo-900 tracking-tight">TripSplit</span>
         </div>
 
-        <div className="bg-white rounded-[2.5rem] p-8 shadow-2xl border border-slate-100 space-y-6">
-          <form onSubmit={handleAuth} className="space-y-4">
+        {/* Illustration area */}
+        <div className="relative z-10 flex flex-col items-center justify-center flex-1 py-10">
+          <div className="relative">
+            {/* Arch backdrop */}
+            <div
+              className="w-56 h-72 rounded-t-full mx-auto"
+              style={{ background: 'rgba(255,255,255,0.5)' }}
+            />
+            {/* Floating cards */}
+            <div className="absolute -top-4 -left-10 bg-white rounded-2xl p-3 shadow-xl border border-indigo-50 flex items-center gap-2">
+              <div className="w-8 h-8 bg-indigo-100 rounded-xl flex items-center justify-center">
+                <MapPin className="w-4 h-4 text-indigo-600" />
+              </div>
+              <div>
+                <p className="text-[9px] font-black text-slate-700">Destination</p>
+                <p className="text-[9px] text-indigo-400 font-semibold">Goa, India</p>
+              </div>
+            </div>
+            <div className="absolute -bottom-4 -right-10 bg-white rounded-2xl p-3 shadow-xl border border-indigo-50 flex items-center gap-2">
+              <div className="w-8 h-8 bg-violet-100 rounded-xl flex items-center justify-center">
+                <Plane className="w-4 h-4 text-violet-500" />
+              </div>
+              <div>
+                <p className="text-[9px] font-black text-slate-700">Next Trip</p>
+                <p className="text-[9px] text-violet-400 font-semibold">4 friends, ₹24,000</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Bottom tagline */}
+        <div className="relative z-10 space-y-2">
+          <p className="text-2xl font-black text-indigo-900 leading-snug">
+            Travel together,<br />settle simply.
+          </p>
+          <p className="text-sm text-indigo-600 font-semibold max-w-xs leading-relaxed opacity-80">
+            Create trips, track every rupee, and split bills effortlessly with your crew.
+          </p>
+        </div>
+      </div>
+
+      {/* ── Right Panel: Form ── */}
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-12">
+
+        {/* Mobile logo */}
+        <div className="lg:hidden flex items-center gap-2 mb-10">
+          <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center shadow">
+            <Globe className="text-white w-5 h-5" />
+          </div>
+          <span className="text-xl font-black text-[#1a1035]">TripSplit</span>
+        </div>
+
+        <div className="w-full max-w-[400px] space-y-8">
+
+          {/* Header */}
+          <div
+            style={{
+              opacity: animating ? 0 : 1,
+              transform: animating ? 'translateY(8px)' : 'translateY(0)',
+              transition: 'opacity 0.2s ease, transform 0.2s ease',
+            }}
+          >
+            <p className="text-xs font-black uppercase tracking-[0.2em] text-indigo-500 mb-2">
+              {isLogin ? 'Welcome Back' : 'Get Started'}
+            </p>
+            <h1 className="text-3xl sm:text-4xl font-black text-[#1a1035] leading-tight">
+              {isLogin ? 'Sign in to your account' : 'Create your account'}
+            </h1>
+            {error && (
+              <div className="mt-4 p-4 bg-red-50 border border-red-100 rounded-2xl flex items-center gap-3 text-red-600 text-[13px] font-black animate-in fade-in slide-in-from-top-2">
+                <div className="w-1.5 h-1.5 bg-red-400 rounded-full shrink-0" />
+                {error}
+              </div>
+            )}
+          </div>
+
+          {/* Form */}
+          <form
+            onSubmit={handleAuth}
+            className="space-y-4"
+            style={{ opacity: animating ? 0 : 1, transition: 'opacity 0.2s ease' }}
+          >
+            {/* Name — signup only */}
             {!isLogin && (
               <div className="space-y-1.5">
-                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">Full Name</label>
-                <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                    <User size={18} className="text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-                  </div>
+                <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">
+                  Full Name
+                </label>
+                <div className="relative">
+                  <User size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
                   <input
                     type="text"
                     required
                     value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="John Doe"
-                    className="w-full bg-slate-50 border-2 border-transparent rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-[#0B1A2C] placeholder:text-slate-300 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all"
+                    onChange={e => setName(e.target.value)}
+                    placeholder="Your name"
+                    className="w-full rounded-2xl py-4 pl-11 pr-4 text-sm font-semibold text-[#1a1035] bg-white border-2 border-slate-200 placeholder:text-slate-300 focus:outline-none focus:border-indigo-400 transition-all duration-200"
                   />
                 </div>
               </div>
             )}
 
+            {/* Email */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">Email Address</label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Mail size={18} className="text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-                </div>
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">
+                Email
+              </label>
+              <div className="relative">
+                <Mail size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
                 <input
                   type="email"
                   required
                   value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@email.com"
-                  className="w-full bg-slate-50 border-2 border-transparent rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-[#0B1A2C] placeholder:text-slate-300 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all"
+                  onChange={e => setEmail(e.target.value)}
+                  placeholder="email@gmail.com"
+                  className="w-full rounded-2xl py-4 pl-11 pr-4 text-sm font-semibold text-[#1a1035] bg-white border-2 border-slate-200 placeholder:text-slate-300 focus:outline-none focus:border-indigo-400 transition-all duration-200"
                 />
               </div>
             </div>
 
+            {/* Password */}
             <div className="space-y-1.5">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">Password</label>
-              <div className="relative group">
-                <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
-                  <Lock size={18} className="text-slate-300 group-focus-within:text-indigo-500 transition-colors" />
-                </div>
+              <label className="text-[11px] font-black text-slate-400 uppercase tracking-widest pl-1">
+                Password
+              </label>
+              <div className="relative">
+                <Lock size={16} className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 pointer-events-none" />
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full bg-slate-50 border-2 border-transparent rounded-2xl py-4 pl-12 pr-4 text-sm font-bold text-[#0B1A2C] placeholder:text-slate-300 focus:outline-none focus:border-indigo-500 focus:bg-white transition-all"
+                  onChange={e => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  className="w-full rounded-2xl py-4 pl-11 pr-12 text-sm font-semibold text-[#1a1035] bg-white border-2 border-slate-200 placeholder:text-slate-300 focus:outline-none focus:border-indigo-400 transition-all duration-200"
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(p => !p)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-300 hover:text-indigo-400 transition-colors"
+                  tabIndex={-1}
+                >
+                  {showPassword ? <EyeOff size={16} /> : <Eye size={16} />}
+                </button>
               </div>
               {isLogin && (
                 <div className="flex justify-end pt-1">
-                  <button type="button" className="text-xs font-bold text-indigo-600 hover:text-indigo-700">Forgot Password?</button>
+                  <button
+                    type="button"
+                    className="text-xs font-bold text-indigo-400 hover:text-indigo-600 transition-colors"
+                  >
+                    Forgot Password?
+                  </button>
                 </div>
               )}
             </div>
 
-            <button type="submit" className="w-full relative group pt-2">
-              <div className="absolute inset-0 bg-indigo-600 rounded-2xl blur-xl group-hover:blur-2xl opacity-20 transition-all top-2" />
-              <div className="relative bg-[#0B1A2C] hover:bg-slate-800 text-white py-4 rounded-2xl text-sm font-black shadow-xl flex items-center justify-center gap-2 transition-all active:scale-95">
-                {isLogin ? 'Sign In' : 'Create Account'} <ArrowRight size={18} />
-              </div>
-            </button>
+            {/* Submit button — same indigo as landing page CTA */}
+            <div className="pt-2">
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full flex items-center justify-center gap-2 py-4 rounded-2xl font-black text-sm text-white transition-all duration-200 active:scale-[0.97] disabled:opacity-70"
+                style={{
+                  background: loading ? '#a5b4fc' : '#4f46e5',
+                  boxShadow: loading ? 'none' : '0 8px 28px rgba(79,70,229,0.35)',
+                }}
+              >
+                {loading ? (
+                  <>
+                    <div className="w-4 h-4 rounded-full border-2 border-white/40 border-t-white animate-spin" />
+                    {isLogin ? 'Signing in…' : 'Creating account…'}
+                  </>
+                ) : (
+                  <>
+                    {isLogin ? 'Sign In' : 'Create Account'}
+                    <ArrowRight size={16} />
+                  </>
+                )}
+              </button>
+            </div>
           </form>
 
-          <div className="relative flex items-center py-2">
-            <div className="flex-grow border-t border-slate-100"></div>
-            <span className="flex-shrink-0 mx-4 text-xs font-black uppercase tracking-widest text-slate-300">OR</span>
-            <div className="flex-grow border-t border-slate-100"></div>
-          </div>
+          {/* Switch mode */}
+          <p className="text-center text-sm font-semibold text-slate-400">
+            {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
+            <button
+              onClick={switchMode}
+              className="font-black text-indigo-600 hover:text-indigo-700 underline underline-offset-2 transition-colors"
+            >
+              {isLogin ? 'Sign up' : 'Sign in'}
+            </button>
+          </p>
 
-          <button
-            onClick={handleGoogleLogin}
-            className="w-full bg-white border-2 border-slate-100 hover:border-slate-200 text-[#0B1A2C] py-4 rounded-2xl text-sm font-black shadow-sm flex items-center justify-center gap-3 transition-all active:scale-95"
-          >
-            <svg className="w-5 h-5" viewBox="0 0 24 24">
-              <path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"/>
-              <path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/>
-              <path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"/>
-              <path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/>
-            </svg>
-            Continue with Google
-          </button>
+          {/* Back to home */}
+          <p className="text-center">
+            <button
+              onClick={() => navigate('/')}
+              className="text-xs font-bold text-slate-300 hover:text-indigo-400 transition-colors"
+            >
+              ← Back to home
+            </button>
+          </p>
         </div>
-
-        <p className="text-center mt-6 text-sm font-bold text-slate-400">
-          {isLogin ? "Don't have an account?" : "Already have an account?"}{' '}
-          <button onClick={() => setIsLogin(!isLogin)} className="text-indigo-600 hover:underline hover:text-indigo-700">
-            {isLogin ? 'Sign up' : 'Sign in'}
-          </button>
-        </p>
       </div>
     </div>
   );

@@ -12,6 +12,8 @@ const CATEGORIES = [
   { value: 'tickets', label: 'Tickets', icon: '🎟️' },
   { value: 'entertainment', label: 'Entertainment', icon: '🎉' },
   { value: 'shopping', label: 'Shopping', icon: '🛍️' },
+  { value: 'alcohol', label: 'Alcohol', icon: '🍺' },
+  { value: 'smoking', label: 'Smoking', icon: '🚬' },
   { value: 'other', label: 'Other', icon: '📦' },
 ];
 
@@ -57,12 +59,12 @@ export default function AddExpense() {
     try {
       await expenseApi.create({
         tripId: tripId!,
-        title: description, // Backend might expect 'title' instead of 'description'
+        title: description,
         description: description,
         amount: Number(amount),
         paidBy: payer,
         category: category,
-        splitAmong: splitAmong
+        splitBetween: splitAmong   // renamed to match backend field name
       });
       showToast('Expense added successfully!', 'success');
       navigate(`/trip/${tripId}`);
@@ -185,9 +187,9 @@ export default function AddExpense() {
                         <label className="text-[10px] font-black uppercase tracking-widest">Who Paid?</label>
                      </div>
                      <div className="grid grid-cols-2 gap-3">
-                        {members.map((member, idx) => (
+                        {members.map((member) => (
                            <button
-                              key={member._id || idx}
+                              key={member.name}
                               type="button"
                               onClick={() => setPayer(member.name)}
                               className={`p-4 rounded-2xl border-2 font-black text-sm tracking-tight transition-all flex items-center justify-between ${
@@ -236,7 +238,7 @@ export default function AddExpense() {
                         </button>
                         {members.map(m => (
                            <button
-                              key={m._id}
+                              key={m.name}
                               type="button"
                               onClick={() => {
                                  if (splitAmong.includes(m.name)) {

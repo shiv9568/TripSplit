@@ -7,11 +7,15 @@ import { useToast } from '../components/Toast';
 
 export default function CreateTrip() {
   const navigate = useNavigate();
-  const { currentUser } = useApp();
+  const { currentUser, setLastTripId } = useApp();
   const { showToast } = useToast();
   
   const [tripName, setTripName] = useState('');
-  const [members, setMembers] = useState([{ name: currentUser || '', email: '' }]);
+  const [budget, setBudget] = useState<string>('');
+  const [members, setMembers] = useState([{ 
+    name: currentUser?.name || '', 
+    email: currentUser?.email || '' 
+  }]);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -48,8 +52,11 @@ export default function CreateTrip() {
       return;
     }
     
-    // Filter out empty names
-    const validMembers = members.map(m => m.name.trim()).filter(Boolean);
+    // Keep full objects { name, email } — filter out entries with empty names
+    const validMembers = members
+      .filter(m => m.name.trim())
+      .map(m => ({ name: m.name.trim(), email: m.email.trim() || undefined }));
+
     if (validMembers.length === 0) {
       showToast('At least one member is required', 'error');
       return;
@@ -58,24 +65,28 @@ export default function CreateTrip() {
     setIsSubmitting(true);
     try {
       const { data } = await tripApi.create({
-        name: tripName,
-        members: validMembers,
-        createdBy: currentUser || 'Anonymous'
+        name: tripName.trim(),
+        budget: Number(budget) || 0,
+        members: validMembers,          // ✅ array of { name, email? } objects
+        createdBy: currentUser?.email || currentUser?.name || 'Anonymous'
       });
       showToast('Trip created successfully!', 'success');
+      setLastTripId(data._id);
       navigate(`/trip/${data._id}`);
-    } catch {
-      showToast('Failed to create trip', 'error');
+    } catch (err: any) {
+      const msg = err?.response?.data?.error || 'Failed to create trip';
+      showToast(msg, 'error');
     } finally {
       setIsSubmitting(false);
     }
   };
 
+
   return (
-    <div className="min-h-screen bg-[#f8fbfa] font-sans flex flex-col relative overflow-hidden">
+    <div className="min-h-screen font-sans flex flex-col relative overflow-hidden" style={{ background: '#FAF7F4' }}>
       {/* Decorative Accents */}
-      <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-indigo-100/60 rounded-full blur-[120px] pointer-events-none" />
-      <div className="absolute bottom-[20%] left-[-10%] w-[300px] h-[300px] bg-teal-50 rounded-full blur-[100px] pointer-events-none" />
+      <div className="absolute top-[-10%] right-[-10%] w-[500px] h-[500px] bg-indigo-50/50 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute bottom-[20%] left-[-10%] w-[300px] h-[300px] bg-violet-50/40 rounded-full blur-[100px] pointer-events-none" />
 
       {/* Header */}
       <header className="relative z-10 px-6 py-6 max-w-2xl mx-auto w-full flex items-center justify-between">
@@ -108,12 +119,12 @@ export default function CreateTrip() {
 
           <form onSubmit={handleSubmit} className="space-y-6">
             
-            {/* Trip Name input */}
-            <div className="bg-white rounded-[2rem] p-6 shadow-xl border border-slate-100 space-y-4">
-              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2 flex flex-col">
-                Trip Name
-              </label>
-              <div className="relative group">
+            {/* Trip Name and Budget input */}
+            <div className="flex flex-col sm:flex-row gap-6">
+              <div className="flex-1 bg-white rounded-[2rem] p-6 shadow-xl border border-slate-100 space-y-4">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">
+                  Trip Name
+                </label>
                 <input 
                   type="text"
                   value={tripName}
@@ -121,8 +132,22 @@ export default function CreateTrip() {
                   placeholder="Bali Summer Tour"
                   className="w-full bg-slate-50 border-2 border-transparent focus:border-indigo-500 rounded-2xl px-6 py-5 text-xl font-black text-[#0B1A2C] placeholder:text-slate-300 focus:bg-white transition-all shadow-inner outline-none"
                   required
-                  autoFocus
                 />
+              </div>
+
+              <div className="flex-1 bg-white rounded-[2rem] p-6 shadow-xl border border-slate-100 space-y-4">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest pl-2">
+                  Total Budget (₹)
+                </label>
+                <div className="relative group">
+                  <input 
+                    type="number"
+                    value={budget}
+                    onChange={(e) => setBudget(e.target.value)}
+                    placeholder="50,000"
+                    className="w-full bg-slate-50 border-2 border-transparent focus:border-indigo-500 rounded-2xl px-6 py-5 text-xl font-black text-[#0B1A2C] placeholder:text-slate-300 focus:bg-white transition-all shadow-inner outline-none"
+                  />
+                </div>
               </div>
             </div>
 

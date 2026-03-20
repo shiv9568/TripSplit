@@ -1,24 +1,46 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5000/api';
+// Dynamically use the same hostname the page was loaded from.
+// This makes API calls work both on localhost AND when opened
+// from a phone/tablet on the same WiFi (using your PC's local IP).
+const API_URL = `http://${window.location.hostname}:5000/api`;
 
 const api = axios.create({
   baseURL: API_URL,
   headers: { 'Content-Type': 'application/json' },
 });
 
+// Automatically inject JWT token into all requests for secure identification
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('tripsplit_token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export const tripApi = {
-  getAll: () => api.get('/trips'),
+  getAll: (name: string, email?: string) => 
+    api.get(`/trips?name=${encodeURIComponent(name)}${email ? `&email=${encodeURIComponent(email)}` : ''}`),
   getById: (id: string) => api.get(`/trips/${id}`),
+  getTripByInviteCode: (code: string) => api.get(`/trips/invite/${code}`),
+  renameUser: (oldName: string, newName: string) => api.post('/trips/rename', { oldName, newName }),
   create: (data: any) => api.post('/trips', data),
   update: (id: string, data: any) => api.put(`/trips/${id}`, data),
   delete: (id: string) => api.delete(`/trips/${id}`),
   join: (code: string, name: string, email?: string) => api.post('/trips/join', { code, name, email }),
+  checkStatus: (id: string, name: string) => api.get(`/trips/check-status/${id}/${name}`),
+  approve: (tripId: string, memberName: string) => api.post('/trips/approve', { tripId, memberName }),
+  reject: (tripId: string, memberName: string) => api.post('/trips/reject', { tripId, memberName }),
+  addMember: (tripId: string, name: string, email?: string) => api.post('/trips/add-member', { tripId, name, email }),
+  removeMember: (tripId: string, memberName: string) => api.post('/trips/remove-member', { tripId, memberName }),
+  leave: (tripId: string, memberName: string) => api.post('/trips/remove-member', { tripId, memberName }),
   getByInviteCode: (code: string) => api.get(`/trips/invite/${code}`),
 };
 
 export const expenseApi = {
   getAll: (tripId: string) => api.get(`/expenses/trip/${tripId}`),
+  getById: (id: string) => api.get(`/expenses/${id}`),
   create: (data: any) => api.post('/expenses', data),
   update: (id: string, data: any) => api.put(`/expenses/${id}`, data),
   delete: (id: string) => api.delete(`/expenses/${id}`),

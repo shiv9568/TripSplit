@@ -17,6 +17,8 @@ const CATEGORIES = [
   { value: 'tickets', label: 'Tickets', icon: '🎟️', bg: 'bg-pink-100', text: 'text-pink-600' },
   { value: 'entertainment', label: 'Entertainment', icon: '🎉', bg: 'bg-purple-100', text: 'text-purple-600' },
   { value: 'shopping', label: 'Shopping', icon: '🛍️', bg: 'bg-teal-100', text: 'text-teal-600' },
+  { value: 'alcohol', label: 'Alcohol', icon: '🍺', bg: 'bg-yellow-100', text: 'text-yellow-600' },
+  { value: 'smoking', label: 'Smoking', icon: '🚬', bg: 'bg-slate-100', text: 'text-slate-600' },
   { value: 'other', label: 'Other', icon: '📦', bg: 'bg-gray-100', text: 'text-gray-600' },
 ];
 
@@ -28,6 +30,13 @@ export default function Dashboard() {
   const { currentUser } = useApp();
   const navigate = useNavigate();
   const { showToast } = useToast();
+
+  // Auth guard — bounce to login if not authenticated
+  useEffect(() => {
+    if (!currentUser) {
+      navigate('/authUser', { replace: true, state: { from: '/dashboard' } });
+    }
+  }, [currentUser, navigate]);
   
   const [trips, setTrips] = useState<Trip[]>([]);
   const [activeTripId, setActiveTripId] = useState<string | null>(null);
@@ -52,8 +61,8 @@ export default function Dashboard() {
   }, [showToast]);
 
   useEffect(() => {
-    loadInitialData();
-  }, [loadInitialData]);
+    if (currentUser) loadInitialData();
+  }, [loadInitialData, currentUser]);
 
   const loadActiveTripData = useCallback(async (tripId: string) => {
     try {

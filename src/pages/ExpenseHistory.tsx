@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Clock, Search, Receipt, Share2, Filter, IndianRupee, Trash2 } from 'lucide-react';
-import { tripApi, expenseApi } from '../utils/api';
+import { expenseApi } from '../utils/api';
 import { useToast } from '../components/Toast';
 
 interface Expense {
@@ -28,8 +28,9 @@ export default function ExpenseHistory() {
 
   const fetchExpenses = async () => {
     try {
-      const { data } = await tripApi.getById(tripId!);
-      setExpenses(data.expenses);
+      setIsLoading(true);
+      const { data } = await expenseApi.getAll(tripId!);
+      setExpenses(data || []);
     } catch {
       showToast('Error loading expenses', 'error');
     } finally {
@@ -50,8 +51,8 @@ export default function ExpenseHistory() {
   };
 
   const filteredExpenses = expenses.filter(e => 
-    e.description.toLowerCase().includes(search.toLowerCase()) ||
-    e.paidBy.toLowerCase().includes(search.toLowerCase())
+    (e.description || '').toLowerCase().includes(search.toLowerCase()) ||
+    (e.paidBy || '').toLowerCase().includes(search.toLowerCase())
   );
 
   if (isLoading) return (

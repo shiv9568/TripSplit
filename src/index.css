@@ -151,6 +151,27 @@
     from { transform: scale(0.95); opacity: 0; }
     to { transform: scale(1); opacity: 1; }
   }
+
+  .mesh-gradient {
+    background-color: #ffffff;
+    background-image: 
+      radial-gradient(at 0% 0%, hsla(215, 100%, 97%, 1) 0, transparent 50%), 
+      radial-gradient(at 50% 0%, hsla(225, 100%, 97%, 1) 0, transparent 50%), 
+      radial-gradient(at 100% 0%, hsla(235, 100%, 97%, 1) 0, transparent 50%), 
+      radial-gradient(at 0% 50%, hsla(215, 100%, 97%, 1) 0, transparent 50%), 
+      radial-gradient(at 100% 50%, hsla(225, 100%, 97%, 1) 0, transparent 50%), 
+      radial-gradient(at 0% 100%, hsla(235, 100%, 97%, 1) 0, transparent 50%), 
+      radial-gradient(at 50% 100%, hsla(215, 100%, 97%, 1) 0, transparent 50%), 
+      radial-gradient(at 100% 100%, hsla(225, 100%, 97%, 1) 0, transparent 50%);
+  }
+
+  .glass {
+    @apply bg-white/70 backdrop-blur-xl border border-white/20 shadow-xl;
+  }
+
+  .glass-card {
+    @apply bg-white/40 backdrop-blur-md border border-white/40 shadow-lg hover:shadow-xl transition-all duration-300;
+  }
 }
 
 @layer components {

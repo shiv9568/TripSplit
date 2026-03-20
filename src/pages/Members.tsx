@@ -32,10 +32,11 @@ export default function Members() {
       const totalCost = data.expenses.reduce((acc: number, ex: any) => acc + ex.amount, 0);
       const perPerson = totalCost / data.members.length;
       
-      const stats = data.members.map((m: string) => {
-        const paid = data.expenses.filter((ex: any) => ex.paidBy === m).reduce((acc: number, ex: any) => acc + ex.amount, 0);
+      const stats = data.members.map((m: any) => {
+        const name = typeof m === 'string' ? m : m.name;
+        const paid = data.expenses.filter((ex: any) => ex.paidBy === name).reduce((acc: number, ex: any) => acc + ex.amount, 0);
         return {
-          name: m,
+          name: name,
           paid: paid,
           balance: paid - perPerson
         };

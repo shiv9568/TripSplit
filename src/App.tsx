@@ -4,7 +4,6 @@ import { ToastProvider } from './components/Toast';
 
 import LandingPage from './pages/LandingPage';
 import AuthPage from './pages/AuthPage';
-import Dashboard from './pages/Dashboard';
 import CreateTrip from './pages/CreateTrip';
 import JoinTrip from './pages/JoinTrip';
 import TripDetail from './pages/TripDetail';
@@ -15,6 +14,8 @@ import ExpenseHistory from './pages/ExpenseHistory';
 import ExpenseDetail from './pages/ExpenseDetail';
 import Analytics from './pages/Analytics';
 import Profile from './pages/Profile';
+import MyTrips from './pages/MyTrips';
+import EditExpense from './pages/EditExpense';
 import WhatsappImport from './pages/WhatsappImport';
 import Payment from './pages/Payment';
 import TripSummary from './pages/TripSummary';
@@ -28,8 +29,8 @@ function App() {
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<LandingPage />} />
+            <Route path="/dashboard" element={<MyTrips />} />
             <Route path="/authUser" element={<AuthPage />} />
-            <Route path="/dashboard" element={<Dashboard />} />
             <Route path="/create-trip" element={<CreateTrip />} />
             <Route path="/join" element={<JoinTrip />} />
             <Route path="/trip/:id" element={<TripDetail />} />
@@ -39,8 +40,10 @@ function App() {
             <Route path="/trip/:id/history" element={<ExpenseHistory />} />
             <Route path="/trip/:id/analytics" element={<Analytics />} />
             <Route path="/trip/:id/summary" element={<TripSummary />} />
+            <Route path="/trip/:id/edit-expense/:expenseId" element={<EditExpense />} />
             <Route path="/expense/:id" element={<ExpenseDetail />} />
             <Route path="/profile" element={<Profile />} />
+            <Route path="/trips" element={<MyTrips />} />
             <Route path="/import" element={<WhatsappImport />} />
             <Route path="/payment" element={<Payment />} />
             <Route path="/notifications" element={<Notifications />} />
