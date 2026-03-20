@@ -23,7 +23,7 @@ export default function JoinTrip() {
 
   useEffect(() => {
     let interval: any;
-    const nameToCheck = guestName.trim() || currentUser;
+    const nameToCheck = guestName.trim() || currentUser?.name;
     if (pendingTrip && nameToCheck) {
       console.log('Polling status for trip', pendingTrip.id, 'with name', nameToCheck);
       interval = setInterval(async () => {
@@ -31,7 +31,7 @@ export default function JoinTrip() {
           const { data } = await tripApi.checkStatus(pendingTrip.id, nameToCheck);
           console.log('Status update:', data.status);
           if (data.status === 'approved') {
-            if (!currentUser) setCurrentUser(nameToCheck);
+            if (!currentUser) setCurrentUser({ id: crypto.randomUUID(), name: nameToCheck as string, email: '' });
             localStorage.removeItem('tripsplit_pending_join');
             setLastTripId(pendingTrip.id);
             showToast('Access Granted! Welcome aboard.', 'success');
@@ -58,12 +58,12 @@ export default function JoinTrip() {
         return;
       }
       // Always go to name confirmation step now
-      if (currentUser && !guestName) setGuestName(currentUser);
+      if (currentUser && !guestName) setGuestName(currentUser.name);
       setStep(2);
       return;
     }
 
-    const finalName = guestName.trim() || currentUser;
+    const finalName = guestName.trim() || currentUser?.name;
     if (!finalName) {
       showToast('Please provide your name.', 'error');
       return;
@@ -82,7 +82,7 @@ export default function JoinTrip() {
          setPendingTrip(pendingData);
          return;
       }
-      if (!currentUser) setCurrentUser(name);
+      if (!currentUser) setCurrentUser({ id: crypto.randomUUID(), name, email: '' });
       showToast('Successfully joined!', 'success');
       setLastTripId(data._id);
       navigate(`/trip/${data._id}`);
@@ -234,7 +234,7 @@ export default function JoinTrip() {
       {/* Footer Info */}
       <footer className="p-10 text-center">
          <p className="text-slate-400 text-xs font-bold">
-            Logged in as <span className="text-indigo-600 uppercase tracking-widest">{currentUser}</span>
+            Logged in as <span className="text-indigo-600 uppercase tracking-widest">{currentUser?.name || 'Guest'}</span>
          </p>
       </footer>
     </div>

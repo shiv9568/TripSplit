@@ -48,7 +48,7 @@ export default function Dashboard() {
   const loadInitialData = useCallback(async () => {
     setIsLoading(true);
     try {
-      const { data } = await tripApi.getAll();
+      const { data } = await tripApi.getAll(currentUser!.name, currentUser!.email);
       setTrips(data);
       if (data.length > 0) {
         setActiveTripId(data[0]._id);

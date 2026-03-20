@@ -63,7 +63,7 @@ export default function Home() {
                  </div>
 
                  <button 
-                   onClick={() => nameInput.trim() && setCurrentUser(nameInput)}
+                   onClick={() => nameInput.trim() && setCurrentUser({ id: crypto.randomUUID(), name: nameInput.trim(), email: '' })}
                    className="w-full relative group/btn"
                    disabled={!nameInput.trim()}
                  >

@@ -2,8 +2,8 @@ import { useState, useEffect, useCallback, memo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, ArrowRight, Plus, Receipt, PieChart, Users, X,
-  Copy, Check, Trash2, MessageSquare, Download, Edit2, HandCoins,
-  Plane, Globe, Sparkles, TrendingUp, ChevronRight,
+  Copy, Check, Trash2, Download, Edit2, HandCoins,
+  Plane, Globe, TrendingUp, ChevronRight,
   Info, History, LayoutDashboard, ReceiptText, Home, User
 } from 'lucide-react';
 import { tripApi, expenseApi } from '../utils/api';
@@ -80,7 +80,7 @@ const ExpenseItem = memo(function ExpenseItem({
 export default function TripDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const { currentUser, setCurrentUser, setLastTripId } = useApp();
+  const { currentUser, setLastTripId } = useApp();
   const { showToast } = useToast();
   
   const [trip, setTrip] = useState<Trip | null>(null);
@@ -89,7 +89,6 @@ export default function TripDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [tab, setTab] = useState<'expenses' | 'summary' | 'settlements' | 'members'>('expenses');
   const [copied, setCopied] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const loadData = useCallback(async () => {
     if (!id) return;
