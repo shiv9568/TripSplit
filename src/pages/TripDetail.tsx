@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, ArrowRight, Plus, Receipt, PieChart, Users, X,
   Copy, Check, Trash2, Download, Edit2, HandCoins,
-  Plane, Globe, TrendingUp, ChevronRight,
+  Plane, Globe, TrendingUp, ChevronRight, Sparkles,
   Info, History, LayoutDashboard, ReceiptText, Home, User
 } from 'lucide-react';
 import { tripApi, expenseApi } from '../utils/api';
@@ -171,6 +171,17 @@ export default function TripDetail() {
       loadData();
     } catch {
       showToast('Failed to remove member', 'error');
+    }
+  };
+
+  const handleTransferAdmin = async (newAdminName: string) => {
+    if (!window.confirm(`Transfer admin rights to ${newAdminName}? You will no longer be the admin.`)) return;
+    try {
+      await tripApi.transferAdmin(id!, newAdminName);
+      showToast(`${newAdminName} is now the admin`, 'success');
+      loadData();
+    } catch (err: any) {
+      showToast(err.response?.data?.error || 'Failed to transfer admin rights', 'error');
     }
   };
 
@@ -704,30 +715,40 @@ export default function TripDetail() {
                                     </div>
                                  </div>
                                  
-                                 <div className="flex items-center gap-5">
-                                    <div className="text-right">
-                                       <div className="space-y-0.5">
-                                          <p className="text-sm font-black text-[#1a1035]">₹{summary?.paidBy[m.name]?.toLocaleString() || 0}</p>
-                                          <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Paid</p>
-                                       </div>
-                                       
-                                       {summary?.balances[m.name] !== undefined && (
-                                          <div className={`mt-2 px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-tighter inline-block ${summary.balances[m.name] >= 0 ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100' : 'bg-rose-50 text-rose-500 ring-1 ring-rose-100'}`}>
-                                             {summary.balances[m.name] >= 0 ? 'Get' : 'Pay'} ₹{Math.abs(summary.balances[m.name]).toLocaleString()}
-                                          </div>
-                                       )}
-                                    </div>
+                             <div className="flex items-center gap-5">
+                                     <div className="text-right">
+                                        <div className="space-y-0.5">
+                                           <p className="text-sm font-black text-[#1a1035]">₹{summary?.paidBy[m.name]?.toLocaleString() || 0}</p>
+                                           <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">Paid</p>
+                                        </div>
+                                        
+                                        {summary?.balances[m.name] !== undefined && (
+                                           <div className={`mt-2 px-3 py-1 rounded-xl text-[9px] font-black uppercase tracking-tighter inline-block ${summary.balances[m.name] >= 0 ? 'bg-emerald-50 text-emerald-600 ring-1 ring-emerald-100' : 'bg-rose-50 text-rose-500 ring-1 ring-rose-100'}`}>
+                                              {summary.balances[m.name] >= 0 ? 'Get' : 'Pay'} ₹{Math.abs(summary.balances[m.name]).toLocaleString()}
+                                           </div>
+                                        )}
+                                     </div>
 
-                                    {(currentUser?.name === trip?.createdBy || currentUser?.email === trip?.createdBy) && m.name !== trip.createdBy && (
-                                       <button 
-                                         onClick={() => handleRemoveMember(m.name)}
-                                         className="p-3 text-rose-500 bg-rose-50 hover:bg-rose-100 rounded-2xl transition-all shadow-sm active:scale-95 shrink-0"
-                                         title={`Remove ${m.name}`}
-                                       >
-                                          <Trash2 size={18} strokeWidth={3} />
-                                       </button>
-                                    )}
-                                 </div>
+                                     {m.name === trip?.createdBy && (currentUser?.name === trip?.createdBy || currentUser?.email === trip?.createdBy) && m.name !== currentUser?.name && (
+                                        <button 
+                                          onClick={() => handleTransferAdmin(m.name)}
+                                          className="p-3 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-2xl transition-all shadow-sm active:scale-95 shrink-0"
+                                          title={`Make ${m.name} admin`}
+                                        >
+                                          <Sparkles size={18} strokeWidth={3} />
+                                        </button>
+                                     )}
+
+                                     {(currentUser?.name === trip?.createdBy || currentUser?.email === trip?.createdBy) && m.name !== trip.createdBy && (
+                                        <button 
+                                          onClick={() => handleRemoveMember(m.name)}
+                                          className="p-3 text-rose-500 bg-rose-50 hover:bg-rose-100 rounded-2xl transition-all shadow-sm active:scale-95 shrink-0"
+                                          title={`Remove ${m.name}`}
+                                        >
+                                           <Trash2 size={18} strokeWidth={3} />
+                                        </button>
+                                     )}
+                                  </div>
                               </div>
                           ))}
                        </div>
@@ -736,15 +757,25 @@ export default function TripDetail() {
                     {/* Personal Management */}
                     {currentUser && trip?.members.find(m => m.name === currentUser.name || m.email === currentUser.email) && (
                       <div className="pt-2 px-4">
-                         <button 
-                           onClick={handleLeave}
-                           className="w-full bg-rose-50 text-rose-600 py-5 rounded-[2rem] font-black text-sm hover:bg-rose-100 transition-all flex items-center justify-center gap-3 border border-rose-100 shadow-sm shadow-rose-100/50"
-                         >
-                            <ArrowRight className="rotate-180 w-5 h-5 stroke-[2.5]" /> LEAVE GROUP
-                         </button>
-                         <p className="text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-4">
-                           Note: Your existing expenses will remain in the trip.
-                         </p>
+                        {currentUser?.name === trip?.createdBy || currentUser?.email === trip?.createdBy ? (
+                          <>
+                            <div className="bg-amber-50 text-amber-700 p-4 rounded-2xl text-center text-sm font-bold">
+                              As the admin, you must transfer admin rights before leaving.
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <button 
+                              onClick={handleLeave}
+                              className="w-full bg-rose-50 text-rose-600 py-5 rounded-[2rem] font-black text-sm hover:bg-rose-100 transition-all flex items-center justify-center gap-3 border border-rose-100 shadow-sm shadow-rose-100/50"
+                            >
+                               <ArrowRight className="rotate-180 w-5 h-5 stroke-[2.5]" /> LEAVE GROUP
+                            </button>
+                            <p className="text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-4">
+                              Note: Your existing expenses will remain in the trip.
+                            </p>
+                          </>
+                        )}
                       </div>
                     )}
                  </div>

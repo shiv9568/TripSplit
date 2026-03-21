@@ -7,12 +7,25 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
-// Automatically inject JWT token into all requests for secure identification
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('tripsplit_token');
+  const userData = localStorage.getItem('tripsplit_user_data');
+  
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
+  
+  if (userData) {
+    try {
+      const user = JSON.parse(userData);
+      if (user?.name) {
+        config.headers['x-user-name'] = user.name;
+      }
+    } catch (e) {
+      // ignore
+    }
+  }
+  
   return config;
 });
 
@@ -32,6 +45,7 @@ export const tripApi = {
   addMember: (tripId: string, name: string, email?: string) => api.post('/trips/add-member', { tripId, name, email }),
   removeMember: (tripId: string, memberName: string) => api.post('/trips/remove-member', { tripId, memberName }),
   leave: (tripId: string, memberName: string) => api.post('/trips/remove-member', { tripId, memberName }),
+  transferAdmin: (tripId: string, newAdminName: string) => api.post('/trips/transfer-admin', { tripId, newAdminName }),
   getByInviteCode: (code: string) => api.get(`/trips/invite/${code}`),
 };
 
