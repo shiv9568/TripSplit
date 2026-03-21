@@ -4,7 +4,7 @@ import {
   ArrowLeft, ArrowRight, Plus, Receipt, PieChart, Users, X,
   Copy, Check, Trash2, Download, Edit2, HandCoins,
   Plane, Globe, TrendingUp, ChevronRight, Sparkles,
-  Info, History, LayoutDashboard, ReceiptText, Home, User
+  Info, History, LayoutDashboard, ReceiptText, Home, User, Share2
 } from 'lucide-react';
 import { tripApi, expenseApi } from '../utils/api';
 import { useApp } from '../context/AppContext';
@@ -137,6 +137,27 @@ export default function TripDetail() {
       setCopied(true);
       showToast('Invite code copied!', 'success');
       setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const shareInviteLink = async () => {
+    if (!trip?.inviteCode) return;
+    const shareUrl = `${window.location.origin}/join?code=${trip.inviteCode}`;
+    const shareText = `Join my trip "${trip.name}" on TripSplit! ${shareUrl}`;
+    
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: `Join "${trip.name}" on TripSplit`,
+          text: shareText,
+          url: shareUrl,
+        });
+      } catch {
+        // User cancelled or error
+      }
+    } else {
+      navigator.clipboard.writeText(shareUrl);
+      showToast('Share link copied!', 'success');
     }
   };
 
@@ -447,21 +468,31 @@ export default function TripDetail() {
         <div className="flex items-center gap-3">
            <div className="flex-1 bg-white rounded-3xl p-5 border border-slate-100 shadow-sm flex items-center justify-between group">
               <div className="space-y-1">
-                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Invite Code</p>
-                 <p className="text-xl font-black tracking-[0.2em] font-mono text-[#0B1A2C]">{trip.inviteCode}</p>
+                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Share Link</p>
+                 <p className="text-lg font-black tracking-[0.2em] font-mono text-[#0B1A2C]">{trip.inviteCode}</p>
               </div>
-              <button 
-                onClick={copyInviteCode}
-                className="w-12 h-12 bg-slate-50 rounded-2xl flex items-center justify-center text-indigo-600 hover:bg-indigo-50 transition-colors active:scale-90"
-              >
-                {copied ? <Check size={20} strokeWidth={3} /> : <Copy size={20} strokeWidth={3} />}
-              </button>
+              <div className="flex items-center gap-2">
+                <button 
+                  onClick={shareInviteLink}
+                  className="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center hover:bg-indigo-700 transition-colors active:scale-90"
+                  title="Share invite link"
+                >
+                  <Share2 size={18} strokeWidth={2.5} />
+                </button>
+                <button 
+                  onClick={copyInviteCode}
+                  className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center text-indigo-600 hover:bg-indigo-50 transition-colors active:scale-90"
+                  title="Copy code"
+                >
+                  {copied ? <Check size={18} strokeWidth={3} /> : <Copy size={18} strokeWidth={3} />}
+                </button>
+              </div>
            </div>
            <button 
              onClick={() => navigate(`/trip/${id}/add-expense`)}
-             className="w-16 h-16 bg-[#0B1A2C] text-white rounded-3xl flex items-center justify-center shadow-2xl hover:bg-slate-800 transition-all active:scale-90"
+             className="w-14 h-14 bg-[#0B1A2C] text-white rounded-3xl flex items-center justify-center shadow-2xl hover:bg-slate-800 transition-all active:scale-90"
            >
-             <Plus size={32} strokeWidth={3} />
+             <Plus size={28} strokeWidth={3} />
            </button>
         </div>
 

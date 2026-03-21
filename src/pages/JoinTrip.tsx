@@ -10,13 +10,17 @@ export default function JoinTrip() {
   const [searchParams] = useSearchParams();
   const { currentUser, setCurrentUser, setLastTripId } = useApp();
   const { showToast } = useToast();
-  const codeInputRef = useRef<HTMLInputElement>(null);
   const nameInputRef = useRef<HTMLInputElement>(null);
+  const codeInputRef = useRef<HTMLInputElement>(null);
   
-  const [joinCode, setJoinCode] = useState(searchParams.get('code') || '');
+  const joinCodeFromUrl = searchParams.get('code') || '';
+  const hasCodeInUrl = joinCodeFromUrl.length >= 4;
+  
+  const [joinCode, setJoinCode] = useState(joinCodeFromUrl);
   const [guestName, setGuestName] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(hasCodeInUrl ? 2 : 1);
+  const [tripName, setTripName] = useState('');
 
   const [pendingTrip, setPendingTrip] = useState<{ id: string; name: string } | null>(() => {
     const saved = localStorage.getItem('tripsplit_pending_join');
@@ -24,21 +28,21 @@ export default function JoinTrip() {
   });
 
   useEffect(() => {
-    if (step === 1) {
-      setTimeout(() => codeInputRef.current?.focus(), 100);
-    } else {
+    if (hasCodeInUrl && !pendingTrip) {
+      tripApi.getTripByInviteCode(joinCodeFromUrl)
+        .then(({ data }) => {
+          setTripName(data.name);
+        })
+        .catch(() => {});
+      setTimeout(() => nameInputRef.current?.focus(), 300);
+    }
+  }, [hasCodeInUrl, joinCodeFromUrl, pendingTrip]);
+
+  useEffect(() => {
+    if (step === 2) {
       setTimeout(() => nameInputRef.current?.focus(), 100);
     }
   }, [step]);
-
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      if (!pendingTrip) {
-        codeInputRef.current?.focus();
-      }
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [pendingTrip]);
 
   useEffect(() => {
     let interval: any;
@@ -162,27 +166,41 @@ export default function JoinTrip() {
                    Cancel Request
                 </button>
              </div>
-          ) : (
-             <>
-               <div className="text-center space-y-4">
-                  <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-widest">
-                     <ShieldCheck size={14} /> Secure Invitation
-                  </div>
-                  <h1 className="text-5xl font-black tracking-tighter leading-tight">
-                     Enter the <br /> <span className="text-indigo-600 italic">Invite Code</span>
-                  </h1>
-               </div>
+) : (
+              <>
+                <div className="text-center space-y-4">
+                   {hasCodeInUrl && tripName ? (
+                     <>
+                       <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-widest">
+                          <ShieldCheck size={14} /> Join Trip
+                       </div>
+                       <h1 className="text-4xl sm:text-5xl font-black tracking-tighter leading-tight">
+                          Welcome to <br /> <span className="text-indigo-600 italic">{tripName}</span>
+                       </h1>
+                       <p className="text-slate-400 font-bold text-sm">Just enter your name to join this trip</p>
+                     </>
+                   ) : (
+                     <>
+                       <div className="inline-flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-600 rounded-full text-[10px] font-black uppercase tracking-widest">
+                          <ShieldCheck size={14} /> Secure Invitation
+                       </div>
+                       <h1 className="text-5xl font-black tracking-tighter leading-tight">
+                          Enter the <br /> <span className="text-indigo-600 italic">Invite Code</span>
+                       </h1>
+                     </>
+                   )}
+                </div>
 
-               <form onSubmit={handleJoin} className="space-y-8">
-                  <div className="space-y-4">
-                    {step === 1 ? (
-                      <div className="space-y-6">
-                         <div className="text-center space-y-2">
-                            <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest">Step 1: Invite Code</h2>
-                         </div>
-                         <div className="relative group">
-                             <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-teal-400 rounded-3xl blur opacity-10 group-focus-within:opacity-25 transition-opacity" />
-                              <input
+                <form onSubmit={handleJoin} className="space-y-8">
+                   <div className="space-y-4">
+                     {step === 1 ? (
+                       <div className="space-y-6">
+                          <div className="text-center space-y-2">
+                             <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest">Step 1: Invite Code</h2>
+                          </div>
+                          <div className="relative group">
+                              <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-teal-400 rounded-3xl blur opacity-10 group-focus-within:opacity-25 transition-opacity" />
+                               <input
                               ref={codeInputRef}
                               type="text"
                               inputMode="text"
@@ -196,16 +214,16 @@ export default function JoinTrip() {
                               autoComplete="off"
                               autoCapitalize="characters"
                             />
-                         </div>
-                      </div>
-                    ) : (
-                      <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-                         <div className="text-center space-y-2">
-                            <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest">Step 2: Who are you?</h2>
-                         </div>
-                         <div className="relative group">
-                             <div className="absolute -inset-1 bg-gradient-to-r from-teal-400 to-indigo-500 rounded-3xl blur opacity-10 group-focus-within:opacity-25 transition-opacity" />
-                              <input 
+                          </div>
+                       </div>
+                     ) : (
+                       <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
+                          <div className="text-center space-y-2">
+                             <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest">{hasCodeInUrl ? 'Your Name' : 'Step 2: Who are you?'}</h2>
+                          </div>
+                          <div className="relative group">
+                              <div className="absolute -inset-1 bg-gradient-to-r from-teal-400 to-indigo-500 rounded-3xl blur opacity-10 group-focus-within:opacity-25 transition-opacity" />
+                               <input 
                               ref={nameInputRef}
                               type="text"
                               inputMode="text"
@@ -218,29 +236,31 @@ export default function JoinTrip() {
                               required
                               autoComplete="name"
                             />
-                         </div>
-                         <button type="button" onClick={() => setStep(1)} className="w-full text-xs font-black text-slate-300 hover:text-indigo-600 uppercase tracking-widest">Change Code</button>
-                      </div>
-                    )}
-                  </div>
+                          </div>
+                          {!hasCodeInUrl && (
+                            <button type="button" onClick={() => setStep(1)} className="w-full text-xs font-black text-slate-300 hover:text-indigo-600 uppercase tracking-widest">Change Code</button>
+                          )}
+                       </div>
+                     )}
+                   </div>
 
-                  <button 
-                    type="submit"
-                    disabled={isSubmitting || (step === 1 && joinCode.length < 4) || (step === 2 && !guestName.trim() && !currentUser)}
-                    className="w-full relative group/btn"
-                  >
-                     <div className="absolute inset-0 bg-indigo-600 rounded-3xl blur-xl group-hover/btn:blur-2xl opacity-20 group-hover/btn:opacity-40 transition-all" />
-                     <div className="relative bg-[#0B1A2C] hover:bg-slate-800 text-white py-7 rounded-[2rem] text-xl font-black shadow-2xl flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50">
-                       {isSubmitting ? 'Hang tight...' : (
-                         <>
-                           {step === 1 ? 'Verify Code' : 'Request Access'} <ArrowRight size={24} strokeWidth={3} />
-                         </>
-                       )}
-                     </div>
-                  </button>
-               </form>
-             </>
-          )}
+                   <button 
+                     type="submit"
+                     disabled={isSubmitting || (step === 1 && joinCode.length < 4) || (step === 2 && !guestName.trim() && !currentUser)}
+                     className="w-full relative group/btn"
+                   >
+                      <div className="absolute inset-0 bg-indigo-600 rounded-3xl blur-xl group-hover/btn:blur-2xl opacity-20 group-hover/btn:opacity-40 transition-all" />
+                      <div className="relative bg-[#0B1A2C] hover:bg-slate-800 text-white py-7 rounded-[2rem] text-xl font-black shadow-2xl flex items-center justify-center gap-3 transition-all active:scale-95 disabled:opacity-50">
+                        {isSubmitting ? 'Hang tight...' : (
+                          <>
+                            {hasCodeInUrl ? 'Join Trip' : (step === 1 ? 'Verify Code' : 'Request Access')} <ArrowRight size={24} strokeWidth={3} />
+                          </>
+                        )}
+                      </div>
+                   </button>
+                </form>
+              </>
+           )}
 
           <div className="pt-8 border-t border-slate-100 flex items-center justify-center gap-10">
              <div className="flex flex-col items-center gap-2">
