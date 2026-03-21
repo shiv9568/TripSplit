@@ -230,19 +230,25 @@ export default function LandingPage() {
           </div>
 
           {/* ── Right: 3D character + floating cards ── */}
-          <div className="relative flex items-center justify-center min-h-[400px]">
+          <div className="relative flex items-center justify-center min-h-[400px] lg:min-h-[500px]">
             {/* Soft arch/blob behind character */}
             <div
               className="absolute w-80 h-80 rounded-full"
               style={{ background: 'linear-gradient(135deg, #e0e7ff 0%, #ede9fe 100%)' }}
             />
 
-            {/* Character image */}
+            {/* Character image - LCP optimized */}
             <img
               src="/hero-character.png"
               alt="TripSplit mascot"
-              className="relative z-10 w-72 sm:w-80 lg:w-96 drop-shadow-2xl select-none"
+              width={384}
+              height={384}
+              className="relative z-10 w-72 sm:w-80 lg:w-96 h-auto min-h-[288px] lg:min-h-[384px] drop-shadow-2xl select-none"
+              style={{ aspectRatio: '1/1' }}
               draggable={false}
+              loading="eager"
+              fetchPriority="high"
+              decoding="sync"
             />
 
             {/* Floating card 1 — expense added */}

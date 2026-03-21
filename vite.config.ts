@@ -1,6 +1,5 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { VitePWA } from 'vite-plugin-pwa'
 
 const API_URL = process.env.NODE_ENV === 'production' 
   ? 'https://tripsplit-server.onrender.com/api'
@@ -12,32 +11,30 @@ export default defineConfig({
   },
   plugins: [
     react(),
-    VitePWA({
-      registerType: 'autoUpdate',
-      includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'mask-icon.svg'],
-      manifest: {
-        name: 'TripSplit - Professional Expense Manager',
-        short_name: 'TripSplit',
-        description: 'Track and split travel expenses with your crew',
-        theme_color: '#4f46e5',
-        icons: [
-          {
-            src: 'pwa-192x192.png',
-            sizes: '192x192',
-            type: 'image/png'
-          },
-          {
-            src: 'pwa-512x512.png',
-            sizes: '512x512',
-            type: 'image/png'
-          }
-        ]
-      }
-    })
+    {
+      name: 'performance-optimizations',
+      transformIndexHtml(html: string) {
+        return html
+          .replace(
+            /<link rel="stylesheet" crossorigin href="(\/assets\/index-[^"]+\.css)">/,
+            `<link rel="stylesheet" crossorigin href="$1" media="print" onload="this.media='all'" />`
+          )
+          .replace(
+            '<div id="root"></div>',
+            `<div id="root" style="min-height:100vh;display:flex;align-items:center;justify-content:center">
+      <div style="width:40px;height:40px;border:3px solid #e5e7eb;border-top-color:#4f46e5;border-radius:50%;animation:spin .8s linear infinite"></div>
+    </div>
+    <style>@keyframes spin{to{transform:rotate(360deg)}}</style>`
+          );
+      },
+    },
   ],
   server: {
     host: '0.0.0.0',
     port: 5173,
     strictPort: true,
+  },
+  build: {
+    cssCodeSplit: true,
   },
 })

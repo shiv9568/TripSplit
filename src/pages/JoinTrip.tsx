@@ -163,14 +163,15 @@ export default function JoinTrip() {
                          </div>
                          <div className="relative group">
                             <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-teal-400 rounded-3xl blur opacity-10 group-focus-within:opacity-25 transition-opacity" />
-                            <input
+                             <input
                               type="text"
                               value={joinCode}
                               onChange={(e) => setJoinCode(e.target.value.toUpperCase().replace(/\s/g, ''))}
-                              placeholder="EX: TRP001"
-                              className="w-full bg-slate-50 border-2 border-slate-100 rounded-[2rem] px-8 py-7 text-3xl font-mono text-center tracking-[0.5em] focus:bg-white focus:border-indigo-400 outline-none transition-all placeholder:text-slate-100"
+                              placeholder="TRP001"
+                              className="w-full bg-white border-2 border-indigo-100 rounded-[2rem] px-6 py-5 text-2xl sm:text-3xl font-mono text-center tracking-[0.3em] sm:tracking-[0.5em] focus:bg-white focus:border-indigo-400 outline-none transition-all placeholder:text-slate-200 text-[#0B1A2C]"
                               required
-                              autoFocus
+                              autoComplete="off"
+                              autoCapitalize="characters"
                             />
                          </div>
                       </div>
@@ -181,14 +182,14 @@ export default function JoinTrip() {
                          </div>
                          <div className="relative group">
                             <div className="absolute -inset-1 bg-gradient-to-r from-teal-400 to-indigo-500 rounded-3xl blur opacity-10 group-focus-within:opacity-25 transition-opacity" />
-                            <input 
+                             <input 
                               type="text"
                               value={guestName}
                               onChange={(e) => setGuestName(e.target.value)}
-                              placeholder="Enter your cool name"
-                              className="relative w-full bg-white border-2 border-indigo-100 rounded-[2rem] px-8 py-6 text-2xl font-black text-center text-[#0B1A2C] placeholder:text-slate-200 focus:border-indigo-500 outline-none transition-all"
+                              placeholder="Enter your name"
+                              className="relative w-full bg-white border-2 border-indigo-100 rounded-[2rem] px-6 py-5 text-xl sm:text-2xl font-bold text-center text-[#0B1A2C] placeholder:text-slate-200 focus:border-indigo-500 outline-none transition-all"
                               required
-                              autoFocus
+                              autoComplete="name"
                             />
                          </div>
                          <button type="button" onClick={() => setStep(1)} className="w-full text-xs font-black text-slate-300 hover:text-indigo-600 uppercase tracking-widest">Change Code</button>
