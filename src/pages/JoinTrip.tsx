@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { Plane, ArrowLeft, ArrowRight, ShieldCheck, Sparkles, UserPlus } from 'lucide-react';
 import { tripApi } from '../utils/api';
@@ -10,6 +10,8 @@ export default function JoinTrip() {
   const [searchParams] = useSearchParams();
   const { currentUser, setCurrentUser, setLastTripId } = useApp();
   const { showToast } = useToast();
+  const codeInputRef = useRef<HTMLInputElement>(null);
+  const nameInputRef = useRef<HTMLInputElement>(null);
   
   const [joinCode, setJoinCode] = useState(searchParams.get('code') || '');
   const [guestName, setGuestName] = useState('');
@@ -20,6 +22,23 @@ export default function JoinTrip() {
     const saved = localStorage.getItem('tripsplit_pending_join');
     return saved ? JSON.parse(saved) : null;
   });
+
+  useEffect(() => {
+    if (step === 1) {
+      setTimeout(() => codeInputRef.current?.focus(), 100);
+    } else {
+      setTimeout(() => nameInputRef.current?.focus(), 100);
+    }
+  }, [step]);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (!pendingTrip) {
+        codeInputRef.current?.focus();
+      }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [pendingTrip]);
 
   useEffect(() => {
     let interval: any;
@@ -162,9 +181,13 @@ export default function JoinTrip() {
                             <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest">Step 1: Invite Code</h2>
                          </div>
                          <div className="relative group">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-teal-400 rounded-3xl blur opacity-10 group-focus-within:opacity-25 transition-opacity" />
-                             <input
+                             <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-teal-400 rounded-3xl blur opacity-10 group-focus-within:opacity-25 transition-opacity" />
+                              <input
+                              ref={codeInputRef}
                               type="text"
+                              inputMode="text"
+                              autoCorrect="off"
+                              spellCheck="false"
                               value={joinCode}
                               onChange={(e) => setJoinCode(e.target.value.toUpperCase().replace(/\s/g, ''))}
                               placeholder="TRP001"
@@ -181,9 +204,13 @@ export default function JoinTrip() {
                             <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest">Step 2: Who are you?</h2>
                          </div>
                          <div className="relative group">
-                            <div className="absolute -inset-1 bg-gradient-to-r from-teal-400 to-indigo-500 rounded-3xl blur opacity-10 group-focus-within:opacity-25 transition-opacity" />
-                             <input 
+                             <div className="absolute -inset-1 bg-gradient-to-r from-teal-400 to-indigo-500 rounded-3xl blur opacity-10 group-focus-within:opacity-25 transition-opacity" />
+                              <input 
+                              ref={nameInputRef}
                               type="text"
+                              inputMode="text"
+                              autoCorrect="off"
+                              spellCheck="false"
                               value={guestName}
                               onChange={(e) => setGuestName(e.target.value)}
                               placeholder="Enter your name"
