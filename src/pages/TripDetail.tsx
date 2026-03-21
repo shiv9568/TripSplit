@@ -89,6 +89,7 @@ export default function TripDetail() {
   const [isLoading, setIsLoading] = useState(true);
   const [tab, setTab] = useState<'expenses' | 'summary' | 'settlements' | 'members'>('expenses');
   const [copied, setCopied] = useState(false);
+  const [selectedMember, setSelectedMember] = useState<{ name: string; email?: string } | null>(null);
 
   const loadData = useCallback(async () => {
     if (!id) return;
@@ -696,26 +697,31 @@ export default function TripDetail() {
                           <h3 className="text-xl font-black text-[#1a1035]">Trip Members</h3>
                           <span className="px-3 py-1 bg-slate-50 text-slate-400 rounded-lg text-[10px] font-black uppercase tracking-widest">
                             {trip?.members.length} Active
-                          </span>
-                       </div>
-                       <div className="grid gap-4">
-                          {trip?.members.map((m: any) => (
-                             <div key={m.name} className="flex items-center justify-between p-5 bg-slate-50/50 rounded-3xl group hover:bg-slate-50 transition-all border border-transparent hover:border-slate-200">
-                                <div className="flex items-center gap-4">
-                                   <div className="w-14 h-14 bg-white rounded-2xl flex items-center justify-center font-black text-indigo-600 shadow-sm ring-1 ring-slate-100 text-lg">
-                                      {m.name.charAt(0).toUpperCase()}
-                                   </div>                                    <div>
-                                       <div className="flex items-center gap-2">
-                                          <p className="font-black text-[#1a1035]">{m.name}</p>
-                                          {m.name === trip.createdBy && (
-                                            <span className="text-[9px] bg-indigo-600 text-white px-1.5 py-0.5 rounded-md font-black uppercase tracking-tighter">Admin</span>
-                                          )}
-                                       </div>
-                                       <p className="text-xs font-bold text-slate-400">{m.email || 'Group Member'}</p>
-                                    </div>
-                                 </div>
-                                 
-                             <div className="flex items-center gap-5">
+                           </span>
+                        </div>
+                        <div className="grid gap-4">
+                           {trip?.members.map((m: any) => (
+                              <div 
+                                key={m.name} 
+                                onClick={() => setSelectedMember({ name: m.name, email: m.email })}
+                                className="flex items-center justify-between p-5 bg-slate-50/50 rounded-3xl group hover:bg-slate-100 transition-all border-2 cursor-pointer active:scale-[0.98] border-transparent hover:border-indigo-200"
+                              >
+                                 <div className="flex items-center gap-4">
+                                    <div className="w-14 h-14 bg-indigo-100 rounded-2xl flex items-center justify-center font-black text-indigo-600 shadow-sm text-lg">
+                                       {m.name.charAt(0).toUpperCase()}
+                                    </div>                                    
+                                    <div>
+                                        <div className="flex items-center gap-2">
+                                           <p className="font-black text-[#1a1035]">{m.name}</p>
+                                           {m.name === trip.createdBy && (
+                                             <span className="text-[9px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-tighter">Admin</span>
+                                           )}
+                                        </div>
+                                        <p className="text-xs font-bold text-slate-400">{m.email || 'Group Member'}</p>
+                                     </div>
+                                  </div>
+                                  
+                              <div className="flex items-center gap-5">
                                      <div className="text-right">
                                         <div className="space-y-0.5">
                                            <p className="text-sm font-black text-[#1a1035]">₹{summary?.paidBy[m.name]?.toLocaleString() || 0}</p>
@@ -729,53 +735,69 @@ export default function TripDetail() {
                                         )}
                                      </div>
 
-                                     {m.name === trip?.createdBy && (currentUser?.name === trip?.createdBy || currentUser?.email === trip?.createdBy) && m.name !== currentUser?.name && (
-                                        <button 
-                                          onClick={() => handleTransferAdmin(m.name)}
-                                          className="p-3 text-indigo-600 bg-indigo-50 hover:bg-indigo-100 rounded-2xl transition-all shadow-sm active:scale-95 shrink-0"
-                                          title={`Make ${m.name} admin`}
-                                        >
-                                          <Sparkles size={18} strokeWidth={3} />
-                                        </button>
-                                     )}
-
-                                     {(currentUser?.name === trip?.createdBy || currentUser?.email === trip?.createdBy) && m.name !== trip.createdBy && (
-                                        <button 
-                                          onClick={() => handleRemoveMember(m.name)}
-                                          className="p-3 text-rose-500 bg-rose-50 hover:bg-rose-100 rounded-2xl transition-all shadow-sm active:scale-95 shrink-0"
-                                          title={`Remove ${m.name}`}
-                                        >
-                                           <Trash2 size={18} strokeWidth={3} />
-                                        </button>
-                                     )}
-                                  </div>
+                              <ChevronRight size={20} className="text-slate-300" />
+                                   </div>
                               </div>
-                          ))}
+                           ))}
+                        </div>
+                     </div>
+
+                     {/* Member Action Modal */}
+                     {selectedMember && (
+                       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={() => setSelectedMember(null)}>
+                         <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+                           <div className="flex items-center gap-4 mb-6">
+                             <div className="w-14 h-14 bg-indigo-100 rounded-2xl flex items-center justify-center font-black text-indigo-600 text-xl">
+                               {selectedMember.name.charAt(0).toUpperCase()}
+                             </div>
+                             <div>
+                               <h3 className="text-xl font-black text-[#1a1035]">{selectedMember.name}</h3>
+                               <p className="text-sm text-slate-400">{selectedMember.email || 'Group Member'}</p>
+                             </div>
+                           </div>
+                           
+                           <div className="space-y-3">
+                             {(currentUser?.name === trip?.createdBy || currentUser?.email === trip?.createdBy) && selectedMember.name !== trip?.createdBy && (
+                               <button 
+                                 onClick={() => { handleTransferAdmin(selectedMember.name); setSelectedMember(null); }}
+                                 className="w-full bg-indigo-600 text-white py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-indigo-700 transition-all active:scale-95"
+                               >
+                                 <Sparkles size={18} /> Make Admin
+                               </button>
+                             )}
+                             
+                             {(currentUser?.name === trip?.createdBy || currentUser?.email === trip?.createdBy) && selectedMember.name !== trip?.createdBy && (
+                               <button 
+                                 onClick={() => { handleRemoveMember(selectedMember.name); setSelectedMember(null); }}
+                                 className="w-full bg-rose-50 text-rose-600 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 hover:bg-rose-100 transition-all active:scale-95"
+                               >
+                                 <Trash2 size={18} /> Remove from Group
+                               </button>
+                             )}
+                             
+                             <button 
+                               onClick={() => setSelectedMember(null)}
+                               className="w-full bg-slate-100 text-slate-600 py-4 rounded-2xl font-black text-sm hover:bg-slate-200 transition-all"
+                             >
+                               Cancel
+                             </button>
+                           </div>
+                         </div>
                        </div>
-                    </div>
+                     )}
 
                     {/* Personal Management */}
                     {currentUser && trip?.members.find(m => m.name === currentUser.name || m.email === currentUser.email) && (
                       <div className="pt-2 px-4">
-                        {currentUser?.name === trip?.createdBy || currentUser?.email === trip?.createdBy ? (
-                          <>
-                            <div className="bg-amber-50 text-amber-700 p-4 rounded-2xl text-center text-sm font-bold">
-                              As the admin, you must transfer admin rights before leaving.
-                            </div>
-                          </>
-                        ) : (
-                          <>
-                            <button 
-                              onClick={handleLeave}
-                              className="w-full bg-rose-50 text-rose-600 py-5 rounded-[2rem] font-black text-sm hover:bg-rose-100 transition-all flex items-center justify-center gap-3 border border-rose-100 shadow-sm shadow-rose-100/50"
-                            >
-                               <ArrowRight className="rotate-180 w-5 h-5 stroke-[2.5]" /> LEAVE GROUP
-                            </button>
-                            <p className="text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-4">
-                              Note: Your existing expenses will remain in the trip.
-                            </p>
-                          </>
-                        )}
+                        <button 
+                          onClick={handleLeave}
+                          className="w-full bg-rose-50 text-rose-600 py-5 rounded-[2rem] font-black text-sm hover:bg-rose-100 transition-all flex items-center justify-center gap-3 border border-rose-100 shadow-sm shadow-rose-100/50"
+                        >
+                           <ArrowRight className="rotate-180 w-5 h-5 stroke-[2.5]" /> LEAVE GROUP
+                        </button>
+                        <p className="text-center text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-4">
+                          Note: Your existing expenses will remain in the trip.
+                        </p>
                       </div>
                     )}
                  </div>
