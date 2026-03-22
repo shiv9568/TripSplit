@@ -8,6 +8,7 @@ import { tripApi, expenseApi } from '../utils/api';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../components/Toast';
 import type { Trip, Expense, TripSummary } from '../types';
+import Onboarding from '../components/Onboarding';
 
 const CATEGORIES = [
   { value: 'food', label: 'Food', icon: '🍔', bg: 'bg-orange-100', text: 'text-orange-600' },
@@ -44,6 +45,19 @@ export default function Dashboard() {
   const [summary, setSummary] = useState<TripSummary | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [showInviteModal, setShowInviteModal] = useState(false);
+  const [runOnboarding, setRunOnboarding] = useState(false);
+
+  useEffect(() => {
+    const hasSeenTour = localStorage.getItem('hasSeenDashboardTour');
+    if (!hasSeenTour) {
+      setRunOnboarding(true);
+    }
+  }, []);
+
+  const handleOnboardingFinish = () => {
+    localStorage.setItem('hasSeenDashboardTour', 'true');
+    setRunOnboarding(false);
+  };
 
   const loadInitialData = useCallback(async () => {
     setIsLoading(true);
@@ -93,6 +107,7 @@ export default function Dashboard() {
   // Exact UI styles based on the provided image
   return (
     <div className="min-h-screen bg-gradient-to-br from-[#F4FBFA] to-[#EAF5F5] font-sans text-slate-900 pb-32">
+      <Onboarding run={runOnboarding} onFinish={handleOnboardingFinish} />
       {/* Top Navigation */}
       {/* Top Navigation */}
       <header className="px-6 py-6 pb-2 z-10 relative">
@@ -112,7 +127,7 @@ export default function Dashboard() {
           <div className="flex items-center gap-3">
              <button 
                onClick={() => navigate('/create-trip')}
-               className="w-10 h-10 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-teal-600 hover:bg-teal-50 transition-all active:scale-95"
+               className="w-10 h-10 bg-white rounded-xl shadow-sm border border-slate-100 flex items-center justify-center text-teal-600 hover:bg-teal-50 transition-all active:scale-95 tour-create-trip"
              >
                <Plus size={22} strokeWidth={3} />
              </button>
@@ -186,9 +201,20 @@ export default function Dashboard() {
             </div>
           </div>
         ) : (
-          <div className="bg-white rounded-[1.5rem] p-6 shadow-sm border border-slate-100 text-center space-y-4">
-             <div className="text-slate-400">No active trips</div>
-             <button onClick={() => navigate('/create-trip')} className="bg-teal-600 text-white px-6 py-2 rounded-xl font-bold">Create Trip</button>
+          <div className="bg-white rounded-[2rem] p-8 py-12 shadow-[0_8px_30px_rgb(0,0,0,0.03)] border border-slate-100 text-center space-y-6 animate-in zoom-in-95 duration-500">
+             <div className="w-24 h-24 bg-teal-50 rounded-full flex items-center justify-center mx-auto mb-4 border-4 border-white shadow-xl">
+               <span className="text-4xl">🌎</span>
+             </div>
+             <div className="space-y-2">
+                <h3 className="text-2xl font-black text-[#002222]">Ready for adventure?</h3>
+                <p className="text-sm font-bold text-slate-400 px-6">You don't have any trips yet. Create one and start splitting expenses with your friends!</p>
+             </div>
+             <button 
+               onClick={() => navigate('/create-trip')} 
+               className="bg-teal-600 hover:bg-teal-700 text-white px-10 py-4 rounded-[1.5rem] font-black shadow-xl shadow-teal-600/30 transition-all active:scale-95 animate-pulse hover:animate-none"
+             >
+               🚀 Start Your First Trip
+             </button>
           </div>
         )}
 
@@ -197,7 +223,7 @@ export default function Dashboard() {
           <div className="grid grid-cols-3 gap-3">
             <button 
               onClick={() => navigate(`/trip/${activeTrip._id}/add-expense`)}
-              className="bg-teal-600 hover:bg-teal-700 active:scale-95 transition-all outline-none rounded-2xl flex flex-col items-center justify-center p-4 shadow-lg shadow-teal-600/20 text-white gap-2"
+              className="bg-teal-600 hover:bg-teal-700 active:scale-95 transition-all outline-none rounded-2xl flex flex-col items-center justify-center p-4 shadow-lg shadow-teal-600/20 text-white gap-2 tour-add-expense"
             >
               <div className="w-8 h-8 rounded-full border-2 border-white/20 flex items-center justify-center mb-1">
                 <Plus size={20} className="text-white" strokeWidth={3} />
@@ -207,7 +233,7 @@ export default function Dashboard() {
 
             <button 
               onClick={() => navigate(`/trip/${activeTrip._id}/settlements`)}
-              className="bg-white hover:bg-slate-50 active:scale-95 transition-all outline-none rounded-2xl flex flex-col items-center justify-center p-4 shadow-sm border border-slate-100 text-[#002222] gap-2"
+              className="bg-white hover:bg-slate-50 active:scale-95 transition-all outline-none rounded-2xl flex flex-col items-center justify-center p-4 shadow-sm border border-slate-100 text-[#002222] gap-2 tour-settle"
             >
               <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center mb-1">
                 <Handshake size={20} className="text-emerald-600" />
@@ -339,7 +365,7 @@ export default function Dashboard() {
           
           <button 
             onClick={() => activeTrip && navigate(`/trip/${activeTrip._id}/summary`)} 
-            className="flex-1 py-4 flex flex-col items-center gap-1 text-slate-400 hover:text-slate-700 transition-colors"
+            className="flex-1 py-4 flex flex-col items-center gap-1 text-slate-400 hover:text-slate-700 transition-colors tour-reports"
           >
             <FileText size={22} strokeWidth={2.5} />
             <span className="text-[10px] font-bold">Reports</span>

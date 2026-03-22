@@ -665,7 +665,16 @@ export default function TripDetail() {
                                      <Sparkles size={28} strokeWidth={2.5} />
                                   </div>
                                   <div>
-                                     <h3 className="text-xl font-black text-amber-900 tracking-tight">Who Pays Next?</h3>
+                                     <div className="flex items-center gap-2">
+                                        <h3 className="text-xl font-black text-amber-900 tracking-tight">Who Pays Next?</h3>
+                                        <div className="group/tooltip relative">
+                                           <Info size={14} className="text-amber-500 cursor-help" />
+                                           <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-slate-900 text-white text-[10px] font-bold rounded-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity pointer-events-none z-50 shadow-xl">
+                                              We analyze current balances to see who owes the most. Having them pay next keeps everyone's debts minimal!
+                                              <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-slate-900" />
+                                           </div>
+                                        </div>
+                                     </div>
                                      <p className="text-[10px] font-black text-amber-600/80 uppercase tracking-[0.2em] mt-1">Smart Optimizer ⚖️</p>
                                   </div>
                                </div>
