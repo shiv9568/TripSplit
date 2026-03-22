@@ -13,6 +13,7 @@ import { useToast } from '../components/Toast';
 import type { Trip, Expense, TripSummary, Member } from '../types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
+import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
 
 const CATEGORIES = [
   { value: 'food', label: 'Food', icon: '🍔', color: 'bg-orange-100 text-orange-600', border: 'border-orange-200' },
@@ -497,23 +498,23 @@ export default function TripDetail() {
             <div className="absolute inset-0 bg-gradient-to-br from-indigo-600 via-indigo-700 to-indigo-900 rounded-[2.5rem] shadow-2xl shadow-indigo-100 transform -rotate-1 group-hover:rotate-0 transition-transform duration-500" />
             <div className="relative p-8 text-white space-y-8">
                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
+                  <div className="space-y-1 min-w-0 flex-1">
                      <p className="text-xs font-black text-indigo-200 uppercase tracking-widest opacity-80">Total Group Spent</p>
-                     <h2 className="text-5xl font-black tracking-tighter">₹{summary.totalAmount.toLocaleString()}</h2>
+                     <h2 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tighter break-words">₹{summary.totalAmount.toLocaleString()}</h2>
                   </div>
-                  <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-[1.5rem] flex items-center justify-center border border-white/20">
+                  <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-[1.5rem] flex items-center justify-center border border-white/20 shrink-0">
                      <Plane size={24} className="text-teal-300 transform -rotate-12" />
                   </div>
                </div>
 
-               <div className="grid grid-cols-2 gap-4">
-                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-5 rounded-3xl">
-                     <p className="text-[10px] font-black text-indigo-100 uppercase tracking-widest mb-1">Per Head</p>
-                     <p className="text-xl font-black text-teal-300">₹{summary.perPerson.toLocaleString()}</p>
+               <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-4 sm:p-5 rounded-3xl min-w-0">
+                     <p className="text-[9px] sm:text-[10px] font-black text-indigo-100 uppercase tracking-widest mb-1 truncate">Per Head</p>
+                     <p className="text-sm sm:text-base md:text-xl font-black text-teal-300 break-words">₹{summary.perPerson.toLocaleString()}</p>
                   </div>
-                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-5 rounded-3xl">
-                     <p className="text-[10px] font-black text-indigo-100 uppercase tracking-widest mb-1">Expenses</p>
-                     <p className="text-xl font-black text-white">{summary.expenseCount}</p>
+                  <div className="bg-white/5 backdrop-blur-md border border-white/10 p-4 sm:p-5 rounded-3xl min-w-0">
+                     <p className="text-[9px] sm:text-[10px] font-black text-indigo-100 uppercase tracking-widest mb-1 truncate">Expenses</p>
+                     <p className="text-sm sm:text-base md:text-xl font-black text-white break-words">{summary.expenseCount}</p>
                   </div>
                </div>
 
@@ -682,11 +683,65 @@ export default function TripDetail() {
                    )}
 
                    {/* Category Breakdown */}
-                   <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm space-y-6">
+                   <div className="bg-white rounded-[2rem] p-6 sm:p-8 border border-slate-100 shadow-sm space-y-6">
                       <div className="flex items-center justify-between">
                          <h3 className="text-xl font-black text-[#0B1A2C]">Spending Pulse</h3>
                          <div className="px-3 py-1 bg-teal-50 text-teal-600 rounded-lg text-[10px] font-black uppercase tracking-widest">Dynamic Stats</div>
                       </div>
+                      
+                      {/* Pie Chart Section */}
+                      <div className="h-[200px] w-full mt-4 mb-2">
+                         <ResponsiveContainer width="100%" height="100%">
+                            <RechartsPieChart>
+                               <Pie
+                                  data={CATEGORIES.map(cat => ({
+                                      name: cat.label,
+                                      amount: summary.categoryBreakdown[cat.value]?.amount || 0,
+                                      hex: ({
+                                          'bg-orange-100 text-orange-600': '#f97316',
+                                          'bg-amber-100 text-amber-600': '#f59e0b',
+                                          'bg-indigo-100 text-indigo-600': '#4f46e5',
+                                          'bg-blue-100 text-blue-600': '#2563eb',
+                                          'bg-pink-100 text-pink-600': '#db2777',
+                                          'bg-purple-100 text-purple-600': '#9333ea',
+                                          'bg-teal-100 text-teal-600': '#0d9488',
+                                          'bg-gray-100 text-gray-600': '#475569',
+                                      } as Record<string, string>)[cat.color] || '#4f46e5'
+                                  })).sort((a,b) => b.amount - a.amount)}
+                                  cx="50%"
+                                  cy="50%"
+                                  innerRadius={55}
+                                  outerRadius={80}
+                                  paddingAngle={5}
+                                  minAngle={15}
+                                  dataKey="amount"
+                                  stroke="none"
+                               >
+                                  {CATEGORIES.map(cat => ({
+                                      name: cat.label,
+                                      amount: summary.categoryBreakdown[cat.value]?.amount || 0,
+                                      hex: ({
+                                          'bg-orange-100 text-orange-600': '#f97316',
+                                          'bg-amber-100 text-amber-600': '#f59e0b',
+                                          'bg-indigo-100 text-indigo-600': '#4f46e5',
+                                          'bg-blue-100 text-blue-600': '#2563eb',
+                                          'bg-pink-100 text-pink-600': '#db2777',
+                                          'bg-purple-100 text-purple-600': '#9333ea',
+                                          'bg-teal-100 text-teal-600': '#0d9488',
+                                          'bg-gray-100 text-gray-600': '#475569',
+                                      } as Record<string, string>)[cat.color] || '#4f46e5'
+                                  })).sort((a,b) => b.amount - a.amount).map((entry, index) => (
+                                     <Cell key={`cell-${index}`} fill={entry.hex} />
+                                  ))}
+                               </Pie>
+                               <RechartsTooltip 
+                                  formatter={(value: any) => [`₹${Number(value).toLocaleString()}`, 'Amount']}
+                                  contentStyle={{ borderRadius: '1rem', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)', fontWeight: 'bold' }}
+                               />
+                            </RechartsPieChart>
+                         </ResponsiveContainer>
+                      </div>
+
                       <div className="space-y-6">
                         {Object.entries(summary.categoryBreakdown)
                           .sort(([,a]: any, [,b]: any) => b.amount - a.amount)
