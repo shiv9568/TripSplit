@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, memo } from 'react';
+import { useState, useEffect, useCallback, memo, useMemo } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, ArrowRight, Plus, Receipt, PieChart, Users, X,
@@ -6,8 +6,9 @@ import {
   Plane, Globe, TrendingUp, ChevronRight, Sparkles,
   Info, History, LayoutDashboard, ReceiptText, Home, User, Share2
 } from 'lucide-react';
-import { tripApi, expenseApi } from '../utils/api';
+import { tripApi, expenseApi, SOCKET_URL } from '../utils/api';
 import { useApp } from '../context/AppContext';
+import { io } from 'socket.io-client';
 import { useToast } from '../components/Toast';
 import type { Trip, Expense, TripSummary, Member } from '../types';
 import jsPDF from 'jspdf';
@@ -91,6 +92,39 @@ export default function TripDetail() {
   const [copied, setCopied] = useState(false);
   const [selectedMember, setSelectedMember] = useState<{ name: string; email?: string } | null>(null);
 
+  const [editingBudget, setEditingBudget] = useState<string | null>(null);
+  const [budgetInput, setBudgetInput] = useState('');
+
+  const handleUpdateCategoryBudget = async (category: string) => {
+    if (!trip) return;
+    const val = Number(budgetInput);
+    if (isNaN(val)) return;
+    
+    try {
+      const updatedBudgets = { ...(trip.categoryBudgets || {}), [category]: val };
+      await tripApi.update(id!, { categoryBudgets: updatedBudgets });
+      showToast(`${Math.abs(val) > 0 ? 'Budget set!' : 'Budget removed'}`, 'success');
+      setEditingBudget(null);
+      loadData();
+    } catch {
+      showToast('Failed to update budget', 'error');
+    }
+  };
+
+  const whoPaysNext = useMemo(() => {
+    if (!summary || !summary.balances) return null;
+    let minBalance = Infinity;
+    let nextPayer = null;
+    for (const [name, balance] of Object.entries(summary.balances)) {
+      if ((balance as number) < minBalance) {
+        minBalance = balance as number;
+        nextPayer = name;
+      }
+    }
+    if (minBalance > -10) return null;
+    return { name: nextPayer, amountOwed: Math.abs(minBalance) };
+  }, [summary]);
+
   const loadData = useCallback(async () => {
     if (!id) return;
     try {
@@ -126,10 +160,20 @@ export default function TripDetail() {
   useEffect(() => {
     setIsLoading(true);
     loadData();
-    // High-frequency polling (3s) for near real-time feel
-    const interval = setInterval(loadData, 3000);
-    return () => clearInterval(interval);
-  }, [loadData]);
+
+    if (!id) return;
+    const socket = io(SOCKET_URL);
+    socket.emit('join_trip', id);
+
+    socket.on('trip_updated', () => {
+      // Re-fetch everything immediately when an expense comes in via socket
+      loadData();
+    });
+
+    return () => {
+      socket.disconnect();
+    };
+  }, [loadData, id]);
 
   const copyInviteCode = () => {
     if (trip?.inviteCode) {
@@ -152,8 +196,11 @@ export default function TripDetail() {
           text: shareText,
           url: shareUrl,
         });
-      } catch {
-        // User cancelled or error
+        showToast('Link shared successfully!', 'success');
+      } catch (err: any) {
+        if (err.name !== 'AbortError') {
+          showToast('Failed to share', 'error');
+        }
       }
     } else {
       navigator.clipboard.writeText(shareUrl);
@@ -336,6 +383,61 @@ export default function TripDetail() {
     navigate(`/trip/${id}/edit-expense/${expenseId}`);
   };
 
+  const memberBadges = useMemo(() => {
+    if (!summary || !trip || !expenses) return {};
+    const badges: Record<string, any[]> = {};
+    trip.members.forEach((m:any) => badges[m.name] = []);
+    
+    trip.members.forEach((m:any) => {
+       if (m.name === trip.createdBy || m.email === trip.createdBy) {
+         badges[m.name].push({ icon: '👑', name: 'The Planner', color: 'bg-amber-100/50 text-amber-700 border-amber-200' });
+       }
+    });
+
+    let maxSpent = 0; let minSpent = Infinity;
+    let maxSpender = ''; let minSpender = '';
+    const spentEntries = Object.entries(summary.spent);
+    spentEntries.forEach(([name, amount]) => {
+      if (amount > maxSpent) { maxSpent = amount; maxSpender = name; }
+      if (amount < minSpent && amount > 0) { minSpent = amount; minSpender = name; }
+    });
+    if (maxSpender && maxSpent > 0 && badges[maxSpender]) {
+      badges[maxSpender].push({ icon: '💸', name: 'High Roller', color: 'bg-emerald-100/50 text-emerald-700 border-emerald-200' });
+    }
+    if (minSpender && minSpent > 0 && minSpender !== maxSpender && badges[minSpender] && spentEntries.length > 2) {
+      badges[minSpender].push({ icon: '🤫', name: 'Penny Pincher', color: 'bg-slate-100 text-slate-600 border-slate-200' });
+    }
+
+    const payerCounts: Record<string, number> = {};
+    expenses.forEach((ex:any) => {
+      payerCounts[ex.paidBy] = (payerCounts[ex.paidBy] || 0) + 1;
+    });
+    let maxTx = 0; let topPayer = '';
+    Object.entries(payerCounts).forEach(([name, count]) => {
+      if (count > maxTx) { maxTx = count; topPayer = name; }
+    });
+    if (topPayer && maxTx > 1 && badges[topPayer]) {
+      badges[topPayer].push({ icon: '🌍', name: 'Local Guide', color: 'bg-blue-100/50 text-blue-700 border-blue-200' });
+    }
+
+    let maxBalance = 0; let theBank = '';
+    Object.entries(summary.balances).forEach(([name, bal]) => {
+      if (bal > maxBalance) { maxBalance = bal; theBank = name; }
+    });
+    if (theBank && maxBalance > 0 && badges[theBank]) {
+      badges[theBank].push({ icon: '💎', name: 'The Bank', color: 'bg-purple-100/50 text-purple-700 border-purple-200' });
+    }
+
+    trip.members.forEach((m:any) => {
+       const hasParticipated = (summary.spent[m.name] || 0) > 0 || (summary.paidBy[m.name] || 0) > 0;
+       const isSettled = Math.abs(summary.balances[m.name] || 0) < 1;
+       if (hasParticipated && isSettled && badges[m.name] && m.name !== theBank && m.name !== maxSpender && badges[m.name].length < 2) {
+          badges[m.name].push({ icon: '⚡', name: 'Speedy Settler', color: 'bg-orange-100/50 text-orange-700 border-orange-200' });
+       }
+    });
+
+    return badges;
+  }, [summary, trip, expenses]);
 
   if (isLoading) {
     return (
@@ -551,6 +653,34 @@ export default function TripDetail() {
 
               {tab === 'summary' && summary && (
                 <div className="space-y-8 animate-in fade-in slide-in-from-bottom-2 duration-300">
+                   {/* Who Pays Next? Optimizer */}
+                   {whoPaysNext && (
+                      <div className="bg-gradient-to-br from-amber-50 to-orange-100 rounded-[2.5rem] p-8 border border-amber-200/50 shadow-sm relative overflow-hidden group">
+                         <div className="absolute right-0 top-0 w-64 h-64 bg-amber-200/30 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2 group-hover:scale-110 transition-transform duration-700" />
+                         <div className="relative z-10">
+                            <div className="flex items-center justify-between mb-6">
+                               <div className="flex items-center gap-4">
+                                  <div className="w-14 h-14 bg-white/60 backdrop-blur-md text-amber-500 rounded-2xl flex items-center justify-center shadow-sm border border-white">
+                                     <Sparkles size={28} strokeWidth={2.5} />
+                                  </div>
+                                  <div>
+                                     <h3 className="text-xl font-black text-amber-900 tracking-tight">Who Pays Next?</h3>
+                                     <p className="text-[10px] font-black text-amber-600/80 uppercase tracking-[0.2em] mt-1">Smart Optimizer ⚖️</p>
+                                  </div>
+                               </div>
+                            </div>
+                            <div className="bg-white/40 backdrop-blur-sm rounded-[1.5rem] p-5 border border-white/50 space-y-2">
+                               <p className="text-lg font-bold text-amber-900 leading-snug">
+                                  To keep balances neutral, <span className="font-black bg-amber-200 text-amber-900 px-3 py-1 rounded-xl shadow-sm italic">{whoPaysNext.name}</span> should pay for the next group expense.
+                               </p>
+                               <p className="text-xs font-bold text-amber-700/80">
+                                  They currently owe <span className="font-black">₹{whoPaysNext.amountOwed.toLocaleString()}</span> to the group.
+                               </p>
+                            </div>
+                         </div>
+                      </div>
+                   )}
+
                    {/* Category Breakdown */}
                    <div className="bg-white rounded-[2rem] p-8 border border-slate-100 shadow-sm space-y-6">
                       <div className="flex items-center justify-between">
@@ -562,21 +692,51 @@ export default function TripDetail() {
                           .sort(([,a]: any, [,b]: any) => b.amount - a.amount)
                           .map(([cat, data]: [string, any]) => {
                             const category = getCategoryInfo(cat);
-                            const percent = (data.amount / summary.totalAmount) * 100;
+                            const percent = (data.amount / Math.max(summary.totalAmount, 1)) * 100;
+                            const catBudget = trip.categoryBudgets?.[cat] || 0;
+                            const isOverBudget = catBudget > 0 && data.amount > catBudget;
+                            const isNearBudget = catBudget > 0 && data.amount > catBudget * 0.8 && !isOverBudget;
+                            const displayPercent = catBudget > 0 ? (data.amount / catBudget) * 100 : percent;
+
                             return (
                               <div key={cat} className="space-y-2">
                                 <div className="flex justify-between items-center text-xs font-black uppercase">
                                   <span className="flex items-center gap-2 text-slate-500">
                                     <span className="w-8 h-8 bg-slate-50 rounded-lg flex items-center justify-center text-base">{category.icon}</span> {category.label}
                                   </span>
-                                  <span className="text-[#0B1A2C]">₹{data.amount.toLocaleString()} <span className="text-slate-300 ml-1">({percent.toFixed(0)}%)</span></span>
+                                  {editingBudget === cat ? (
+                                    <div className="flex items-center gap-2">
+                                      <input 
+                                        type="number" 
+                                        value={budgetInput} 
+                                        onChange={e => setBudgetInput(e.target.value)} 
+                                        className="w-20 border-b-2 border-indigo-500 bg-transparent outline-none text-right font-mono"
+                                        placeholder="Limit"
+                                        autoFocus
+                                      />
+                                      <button onClick={() => handleUpdateCategoryBudget(cat)} className="text-emerald-500 hover:scale-110 transition-transform"><Check size={16} strokeWidth={3} /></button>
+                                      <button onClick={() => setEditingBudget(null)} className="text-rose-400 hover:scale-110 transition-transform"><X size={16} strokeWidth={3} /></button>
+                                    </div>
+                                  ) : (
+                                    <button 
+                                      onClick={() => { setEditingBudget(cat); setBudgetInput((catBudget || 0) > 0 ? (catBudget || 0).toString() : ''); }}
+                                      className="group/budget flex items-center gap-2 text-[#0B1A2C] hover:text-indigo-600 transition-colors cursor-pointer"
+                                    >
+                                      <span>₹{data.amount.toLocaleString()} 
+                                        {catBudget > 0 ? <span className="text-slate-400"> / ₹{catBudget.toLocaleString()}</span> : <span className="text-slate-300 ml-1">({percent.toFixed(0)}%)</span>}
+                                      </span>
+                                      <Edit2 size={12} className="opacity-0 group-hover/budget:opacity-100 transition-opacity" />
+                                    </button>
+                                  )}
                                 </div>
                                 <div className="relative w-full h-3 bg-slate-50 rounded-full overflow-hidden border border-slate-100">
                                   <div
-                                    className={`absolute inset-y-0 left-0 rounded-full transition-all duration-1000 ${category.color.split(' ')[1].replace('text-', 'bg-')}`}
-                                    style={{ width: `${percent}%` }}
+                                    className={`absolute inset-y-0 left-0 rounded-full transition-all duration-1000 ${isOverBudget ? 'bg-rose-500' : isNearBudget ? 'bg-orange-400' : category.color.split(' ')[1].replace('text-', 'bg-')}`}
+                                    style={{ width: `${Math.min(100, displayPercent)}%` }}
                                   />
                                 </div>
+                                {isOverBudget && <p className="text-[9px] text-rose-500 font-black tracking-widest uppercase flex items-center gap-1 animate-pulse"><X size={10} /> Over Budget Limit</p>}
+                                {isNearBudget && <p className="text-[9px] text-orange-500 font-black tracking-widest uppercase flex items-center gap-1"><Info size={10} /> Approaching Limit</p>}
                               </div>
                             );
                           })
@@ -620,6 +780,24 @@ export default function TripDetail() {
                       ))}
                    </div>
                 </div>
+
+                   {/* Trip Wrapped Banner */}
+                   <div className="bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-500 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-300 group cursor-pointer" onClick={() => navigate(`/trip/${id}/wrapped`)}>
+                      <div className="absolute top-0 right-0 w-64 h-64 bg-white/20 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2 group-hover:scale-110 transition-transform duration-700" />
+                      <div className="relative z-10 space-y-4">
+                         <div className="w-14 h-14 bg-white/20 backdrop-blur-md border border-white/30 rounded-2xl flex items-center justify-center shadow-inner">
+                            <Sparkles size={28} className="text-pink-100" strokeWidth={2.5} />
+                         </div>
+                         <h3 className="text-3xl font-black leading-tight drop-shadow-md">Play your <br /> <span className="text-pink-200">Trip Wrapped</span></h3>
+                         <p className="text-pink-100/90 font-bold text-sm max-w-[220px]">A visually stunning look back at the group's finances, biggest spenders, and trip highlights 🎬</p>
+                         <button 
+                           onClick={(e) => { e.stopPropagation(); navigate(`/trip/${id}/wrapped`); }} 
+                           className="w-full bg-white text-purple-900 py-4 rounded-2xl font-black text-sm uppercase tracking-widest shadow-xl active:scale-95 transition-all mt-2 flex items-center justify-center gap-2 hover:bg-slate-50"
+                         >
+                            Watch Now <ArrowRight size={18} strokeWidth={3} />
+                         </button>
+                      </div>
+                   </div>
 
                    {/* Quick Tips */}
                    <div className="bg-[#0B1A2C] rounded-[2rem] p-8 text-white relative overflow-hidden group">
@@ -745,10 +923,17 @@ export default function TripDetail() {
                                         <div className="flex items-center gap-2">
                                            <p className="font-black text-[#1a1035]">{m.name}</p>
                                            {m.name === trip.createdBy && (
-                                             <span className="text-[9px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-black uppercase tracking-tighter">Admin</span>
+                                             <span className="text-[10px] bg-indigo-600 text-white px-2 py-0.5 rounded-xl font-black uppercase tracking-widest shadow-sm">Admin</span>
                                            )}
                                         </div>
-                                        <p className="text-xs font-bold text-slate-400">{m.email || 'Group Member'}</p>
+                                        <p className="text-[11px] font-bold text-slate-400 mt-0.5">{m.email || 'Group Member'}</p>
+                                        <div className="flex flex-wrap gap-1 mt-2">
+                                           {memberBadges[m.name]?.map((badge, idx) => (
+                                             <div key={idx} className={`text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-xl border ${badge.color} flex items-center gap-1 shadow-sm`}>
+                                               <span>{badge.icon}</span> {badge.name}
+                                             </div>
+                                           ))}
+                                        </div>
                                      </div>
                                   </div>
                                   

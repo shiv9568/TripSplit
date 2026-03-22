@@ -20,6 +20,7 @@ const EditExpense = lazy(() => import('./pages/EditExpense'));
 const WhatsappImport = lazy(() => import('./pages/WhatsappImport'));
 const Payment = lazy(() => import('./pages/Payment'));
 const TripSummary = lazy(() => import('./pages/TripSummary'));
+const TripWrapped = lazy(() => import('./pages/TripWrapped'));
 const Notifications = lazy(() => import('./pages/Notifications'));
 const NotFound = lazy(() => import('./pages/NotFound'));
 
@@ -50,6 +51,7 @@ function App() {
               <Route path="/trip/:id/history" element={<ExpenseHistory />} />
               <Route path="/trip/:id/analytics" element={<Analytics />} />
               <Route path="/trip/:id/summary" element={<TripSummary />} />
+              <Route path="/trip/:id/wrapped" element={<TripWrapped />} />
               <Route path="/trip/:id/edit-expense/:expenseId" element={<EditExpense />} />
               <Route path="/expense/:id" element={<ExpenseDetail />} />
               <Route path="/profile" element={<Profile />} />

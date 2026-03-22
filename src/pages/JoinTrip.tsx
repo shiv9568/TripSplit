@@ -34,15 +34,19 @@ export default function JoinTrip() {
           setTripName(data.name);
         })
         .catch(() => {});
-      setTimeout(() => nameInputRef.current?.focus(), 300);
     }
   }, [hasCodeInUrl, joinCodeFromUrl, pendingTrip]);
 
   useEffect(() => {
-    if (step === 2) {
-      setTimeout(() => nameInputRef.current?.focus(), 100);
-    }
-  }, [step]);
+    const timer = setTimeout(() => {
+      if (step === 1) {
+        codeInputRef.current?.focus();
+      } else {
+        nameInputRef.current?.focus();
+      }
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [step, hasCodeInUrl]);
 
   useEffect(() => {
     let interval: any;
@@ -199,7 +203,7 @@ export default function JoinTrip() {
                              <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest">Step 1: Invite Code</h2>
                           </div>
                           <div className="relative group">
-                              <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-teal-400 rounded-3xl blur opacity-10 group-focus-within:opacity-25 transition-opacity" />
+                              <div className="absolute -inset-1 bg-gradient-to-r from-indigo-500 to-teal-400 rounded-3xl blur opacity-10 group-focus-within:opacity-25 transition-opacity pointer-events-none" />
                                <input
                               ref={codeInputRef}
                               type="text"
@@ -209,7 +213,7 @@ export default function JoinTrip() {
                               value={joinCode}
                               onChange={(e) => setJoinCode(e.target.value.toUpperCase().replace(/\s/g, ''))}
                               placeholder="TRP001"
-                              className="w-full bg-white border-2 border-indigo-100 rounded-[2rem] px-6 py-5 text-2xl sm:text-3xl font-mono text-center tracking-[0.3em] sm:tracking-[0.5em] focus:bg-white focus:border-indigo-400 outline-none transition-all placeholder:text-slate-200 text-[#0B1A2C]"
+                              className="relative z-10 w-full bg-white border-2 border-indigo-100 rounded-[2rem] px-6 py-5 text-2xl sm:text-3xl font-mono text-center tracking-[0.3em] sm:tracking-[0.5em] focus:bg-white focus:border-indigo-400 outline-none transition-all placeholder:text-slate-200 text-[#0B1A2C]"
                               required
                               autoComplete="off"
                               autoCapitalize="characters"
@@ -222,7 +226,7 @@ export default function JoinTrip() {
                              <h2 className="text-sm font-black text-slate-400 uppercase tracking-widest">{hasCodeInUrl ? 'Your Name' : 'Step 2: Who are you?'}</h2>
                           </div>
                           <div className="relative group">
-                              <div className="absolute -inset-1 bg-gradient-to-r from-teal-400 to-indigo-500 rounded-3xl blur opacity-10 group-focus-within:opacity-25 transition-opacity" />
+                              <div className="absolute -inset-1 bg-gradient-to-r from-teal-400 to-indigo-500 rounded-3xl blur opacity-10 group-focus-within:opacity-25 transition-opacity pointer-events-none" />
                                <input 
                               ref={nameInputRef}
                               type="text"
@@ -232,7 +236,7 @@ export default function JoinTrip() {
                               value={guestName}
                               onChange={(e) => setGuestName(e.target.value)}
                               placeholder="Enter your name"
-                              className="relative w-full bg-white border-2 border-indigo-100 rounded-[2rem] px-6 py-5 text-xl sm:text-2xl font-bold text-center text-[#0B1A2C] placeholder:text-slate-200 focus:border-indigo-500 outline-none transition-all"
+                              className="relative z-10 w-full bg-white border-2 border-indigo-100 rounded-[2rem] px-6 py-5 text-xl sm:text-2xl font-bold text-center text-[#0B1A2C] placeholder:text-slate-200 focus:border-indigo-500 outline-none transition-all"
                               required
                               autoComplete="name"
                             />

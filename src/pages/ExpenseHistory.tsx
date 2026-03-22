@@ -1,19 +1,25 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, Clock, Search, Receipt, Share2, Filter, IndianRupee, Trash2 } from 'lucide-react';
+import { ArrowLeft, Clock, Search, Receipt, Filter, Share2, Trash2 } from 'lucide-react';
 import { expenseApi } from '../utils/api';
 import { useToast } from '../components/Toast';
+import type { Expense } from '../types';
 
-interface Expense {
-  _id: string;
-  description: string;
-  amount: number;
-  paidBy: string;
-  splitAmong: string[];
-  createdAt: string;
-}
+const getCategoryInfo = (cat: string) => {
+  const categories = {
+    food: { icon: '🍔', color: 'text-orange-500 bg-orange-50', label: 'Food & Dining' },
+    petrol: { icon: '⛽', color: 'text-rose-500 bg-rose-50', label: 'Fuel' },
+    hotel: { icon: '🏨', color: 'text-indigo-500 bg-indigo-50', label: 'Accommodation' },
+    tickets: { icon: '🎟️', color: 'text-amber-500 bg-amber-50', label: 'Tickets' },
+    entertainment: { icon: '🎢', color: 'text-purple-500 bg-purple-50', label: 'Entertainment' },
+    shopping: { icon: '🛍️', color: 'text-pink-500 bg-pink-50', label: 'Shopping' },
+    travel: { icon: '✈️', color: 'text-sky-500 bg-sky-50', label: 'Transit' },
+    other: { icon: '📝', color: 'text-slate-500 bg-slate-50', label: 'Miscellaneous' }
+  };
+  return categories[cat as keyof typeof categories] || categories.other;
+};
 
-export default function ExpenseHistory() {
+export default function ExpenseTimeline() {
   const { id: tripId } = useParams();
   const navigate = useNavigate();
   const { showToast } = useToast();
@@ -32,7 +38,7 @@ export default function ExpenseHistory() {
       const { data } = await expenseApi.getAll(tripId!);
       setExpenses(data || []);
     } catch {
-      showToast('Error loading expenses', 'error');
+      showToast('Error loading timeline', 'error');
     } finally {
       setIsLoading(false);
     }
@@ -44,16 +50,24 @@ export default function ExpenseHistory() {
     try {
       await expenseApi.delete(id);
       setExpenses(expenses.filter(e => e._id !== id));
-      showToast('Expense deleted successfully', 'success');
+      showToast('Expense deleted', 'success');
     } catch {
       showToast('Error deleting expense', 'error');
     }
   };
 
   const filteredExpenses = expenses.filter(e => 
-    (e.description || '').toLowerCase().includes(search.toLowerCase()) ||
+    (e.title || '').toLowerCase().includes(search.toLowerCase()) ||
     (e.paidBy || '').toLowerCase().includes(search.toLowerCase())
   );
+
+  // Group by date
+  const groupedExpenses = filteredExpenses.reduce((acc, ex) => {
+    const dateStr = new Date(ex.createdAt).toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' });
+    if (!acc[dateStr]) acc[dateStr] = [];
+    acc[dateStr].push(ex);
+    return acc;
+  }, {} as Record<string, Expense[]>);
 
   if (isLoading) return (
      <div className="min-h-screen bg-[#f8fbfa] flex items-center justify-center">
@@ -75,9 +89,9 @@ export default function ExpenseHistory() {
          >
            <ArrowLeft size={20} strokeWidth={2.5} />
          </button>
-         <h1 className="text-xl font-black tracking-tight text-[#0B1A2C]">Expense Logs</h1>
+         <h1 className="text-xl font-black tracking-tight text-[#0B1A2C]">Trip Timeline</h1>
          <button 
-           onClick={() => showToast('Report generated!', 'success')}
+           onClick={() => showToast('Timeline exported!', 'success')}
            className="w-12 h-12 bg-[#0B1A2C] rounded-2xl shadow-sm flex items-center justify-center text-white hover:bg-slate-800 transition-all"
          >
            <Share2 size={24} />
@@ -87,7 +101,7 @@ export default function ExpenseHistory() {
       <main className="flex-1 relative z-10 px-6 pb-20 overflow-y-auto">
          <div className="max-w-2xl mx-auto space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
             
-            {/* Search & Filter */}
+            {/* Search */}
             <div className="flex gap-4">
                <div className="flex-1 relative group">
                   <div className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-300 group-focus-within:text-indigo-600 transition-colors">
@@ -97,71 +111,105 @@ export default function ExpenseHistory() {
                     type="text"
                     value={search}
                     onChange={(e) => setSearch(e.target.value)}
-                    placeholder="Search logs..."
+                    placeholder="Search timeline..."
                     className="w-full bg-white border-2 border-slate-100 pl-14 pr-6 py-5 rounded-3xl text-lg font-bold text-[#0B1A2C] placeholder:text-slate-200 focus:outline-none focus:border-indigo-500 shadow-xl transition-all"
                   />
                </div>
-               <button className="w-16 h-16 bg-white border-2 border-slate-100 rounded-3xl flex items-center justify-center text-slate-300 hover:border-indigo-500 hover:text-indigo-600 transition-all shadow-xl">
+               <button className="w-16 h-16 bg-white border-2 border-slate-100 rounded-3xl flex items-center justify-center text-slate-300 hover:border-indigo-500 hover:text-indigo-600 transition-all shadow-xl flex-shrink-0">
                   <Filter size={24} />
                </button>
             </div>
 
-            {/* List */}
-            <div className="space-y-6">
-               <h3 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] ml-2 flex items-center gap-2">
-                  <Clock size={16} /> FULL HISTORY ({filteredExpenses.length})
-               </h3>
+            {/* Timeline */}
+            <div className="space-y-6 relative pb-10">
+               {Object.keys(groupedExpenses).length > 0 && (
+                   <div className="absolute left-[39px] sm:left-[51px] top-6 bottom-0 w-[2px] bg-slate-200/50 rounded-full" />
+               )}
 
-               {filteredExpenses.length === 0 ? (
-                  <div className="bg-white rounded-3xl p-16 text-center border-2 border-dashed border-slate-100 flex flex-col items-center gap-6">
+               {Object.keys(groupedExpenses).length === 0 ? (
+                  <div className="bg-white rounded-3xl p-16 text-center border-2 border-dashed border-slate-100 flex flex-col items-center gap-6 relative z-10">
                      <div className="w-24 h-24 bg-slate-50 text-slate-200 rounded-full flex items-center justify-center">
                         <Receipt size={48} />
                      </div>
                      <div className="space-y-2">
-                        <h4 className="text-xl font-black text-[#0B1A2C]">No Logs Found</h4>
-                        <p className="text-slate-400 font-bold">Try searching for something else or add new expense.</p>
+                        <h4 className="text-xl font-black text-[#0B1A2C]">No Events Found</h4>
+                        <p className="text-slate-400 font-bold">Try searching for something else or log a new expense.</p>
                      </div>
                   </div>
                ) : (
-                  <div className="space-y-4">
-                     {filteredExpenses.map((ex, i) => (
-                        <div 
-                           key={i}
-                           className="group relative bg-white p-6 rounded-[32px] border border-slate-100 shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center justify-between overflow-hidden"
-                        >
-                           <div className="flex items-center gap-5">
-                              <div className="w-14 h-14 bg-indigo-50 rounded-2xl flex items-center justify-center text-indigo-600 flex-shrink-0 group-hover:scale-110 transition-transform duration-300">
-                                 <IndianRupee size={28} strokeWidth={2.5} />
-                              </div>
-                              <div className="space-y-1">
-                                 <div className="text-xl font-black text-[#0B1A2C] capitalize flex items-center gap-2">
-                                    {ex.description}
-                                 </div>
-                                 <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                                    <span>PAID BY <span className="text-indigo-600">{ex.paidBy}</span></span>
-                                    <span className="w-1 h-1 bg-slate-300 rounded-full" />
-                                    <span>{new Date(ex.createdAt).toLocaleDateString()}</span>
-                                 </div>
-                              </div>
-                           </div>
+                  Object.entries(groupedExpenses).map(([date, dayExpenses]) => {
+                     const dailyTotal = dayExpenses.reduce((sum, e) => sum + e.amount, 0);
 
-                           <div className="flex items-center gap-6">
-                              <div className="text-right">
-                                 <div className="text-2xl font-black text-[#0B1A2C] tracking-tighter">
-                                    ₹{ex.amount.toLocaleString()}
+                     return (
+                         <div key={date} className="relative z-10 space-y-6">
+                            {/* Date Header Node */}
+                            <div className="flex items-center gap-6">
+                               <div className="w-20 sm:w-28 flex-shrink-0 text-right bg-white/50 backdrop-blur-sm p-2 rounded-xl">
+                                  <div className="text-[10px] sm:text-xs font-black text-slate-400 uppercase tracking-widest leading-none">{date.split(',')[0]}</div>
+                                  <div className="text-sm font-black text-[#0B1A2C] leading-none mt-1">{date.split(',')[1]}</div>
+                               </div>
+                               <div className="w-6 h-6 rounded-full bg-slate-100 border-4 border-white shadow-sm flex-shrink-0 relative z-10 flex items-center justify-center">
+                                  <div className="w-2 h-2 rounded-full bg-slate-300" />
+                               </div>
+                               <div className="flex-1 bg-white px-4 py-2 rounded-2xl shadow-sm border border-slate-100 inline-block">
+                                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest mr-2">Daily Spend</span>
+                                  <span className="text-[#0B1A2C] font-black">₹{dailyTotal.toLocaleString()}</span>
+                               </div>
+                            </div>
+
+                            {/* Expense Nodes */}
+                            {dayExpenses.map((ex) => {
+                               const categoryInfo = getCategoryInfo(ex.category || 'other');
+                               return (
+                                 <div key={ex._id} className="flex items-start gap-4 sm:gap-6 pl-2 sm:pl-0 group">
+                                    <div className="w-[68px] sm:w-[104px] pt-4 text-right flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity">
+                                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+                                           {new Date(ex.createdAt).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                                        </span>
+                                    </div>
+
+                                    {/* Line Node point */}
+                                    <div className="relative pt-6 flex flex-col items-center">
+                                        <div className={`w-4 h-4 rounded-full border-2 border-white shadow-sm flex-shrink-0 relative z-10 ${categoryInfo.color.split(' ')[1].replace('text-', 'bg-')}`} />
+                                    </div>
+
+                                    {/* Card */}
+                                    <div className="flex-1 bg-white p-5 sm:p-6 rounded-[2rem] border border-slate-100 shadow-xl hover:-translate-y-1 transition-all duration-300 flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-2 group/card">
+                                       <div className="flex items-center gap-4">
+                                          <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 group-hover/card:scale-110 group-hover/card:rotate-12 transition-transform duration-300 ${categoryInfo.color.split(' ')[1].replace('text-', 'bg-')} bg-opacity-10 ${categoryInfo.color.split(' ')[1]}`}>
+                                             {categoryInfo.icon}
+                                          </div>
+                                          <div>
+                                             <div className="text-lg sm:text-xl font-black text-[#0B1A2C] capitalize">
+                                                {ex.title}
+                                             </div>
+                                             <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                                                Paid by <span className="text-indigo-600">{ex.paidBy}</span>
+                                             </div>
+                                          </div>
+                                       </div>
+
+                                       <div className="flex items-center justify-between sm:justify-end gap-6 border-t sm:border-t-0 border-slate-50 pt-3 sm:pt-0">
+                                          <div className="text-left sm:text-right">
+                                             <div className="text-xl sm:text-2xl font-black text-[#0B1A2C] tracking-tighter">
+                                                ₹{ex.amount.toLocaleString()}
+                                             </div>
+                                             <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest">{categoryInfo.label}</div>
+                                          </div>
+                                          <button 
+                                             onClick={() => handleDelete(ex._id)}
+                                             className="w-10 h-10 sm:w-12 sm:h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-300 hover:bg-rose-600 hover:text-white transition-all shadow-sm flex-shrink-0 opacity-0 group-hover/card:opacity-100"
+                                          >
+                                             <Trash2 size={18} />
+                                          </button>
+                                       </div>
+                                    </div>
                                  </div>
-                                 <div className="text-[9px] font-black text-slate-300 uppercase tracking-widest">GROSS TOTAL</div>
-                              </div>
-                              <button 
-                                 onClick={() => handleDelete(ex._id)}
-                                 className="w-12 h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-300 hover:bg-rose-600 hover:text-white transition-all shadow-sm"
-                              >
-                                 <Trash2 size={20} />
-                              </button>
-                           </div>
-                        </div>
-                     ))}
-                  </div>
+                               );
+                            })}
+                         </div>
+                     );
+                  })
                )}
             </div>
          </div>

@@ -10,6 +10,7 @@ export interface Trip {
   description?: string;
   members: Member[];
   budget?: number; // Optional trip budget in ₹
+  categoryBudgets?: Record<string, number>;
   pendingMembers?: Member[];
   createdBy: string;
   inviteCode: string;
