@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Plane, ArrowLeft, ArrowRight, ShieldCheck, Sparkles, UserPlus } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ShieldCheck, Sparkles, UserPlus } from 'lucide-react';
 import { tripApi } from '../utils/api';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../components/Toast';
@@ -138,8 +138,8 @@ export default function JoinTrip() {
           <ArrowLeft size={20} strokeWidth={2.5} />
         </button>
         <div className="flex items-center gap-2">
-           <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center shadow-lg shadow-indigo-100">
-              <Plane size={16} className="text-white" />
+           <div className="w-8 h-8 rounded-lg overflow-hidden shadow-lg shadow-indigo-100 italic">
+              <img src="/logo.png" alt="TripSplit Logo" className="w-full h-full object-cover" />
            </div>
            <span className="text-base font-black tracking-tight">TripSplit</span>
         </div>

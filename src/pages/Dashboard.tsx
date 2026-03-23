@@ -119,6 +119,9 @@ export default function Dashboard() {
             >
               <ArrowLeft size={20} strokeWidth={2.5} />
             </button>
+            <div className="w-9 h-9 rounded-xl overflow-hidden shadow-sm border border-slate-100 italic shrink-0">
+              <img src="/logo.png" alt="TripSplit Logo" className="w-full h-full object-cover" />
+            </div>
             <h1 className="text-[22px] font-black tracking-tight text-[#002222]">
               TripSplit
             </h1>

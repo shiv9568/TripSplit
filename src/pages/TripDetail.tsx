@@ -3,7 +3,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 import { 
   ArrowLeft, ArrowRight, Plus, Receipt, PieChart, Users, X,
   Copy, Check, Trash2, Download, Edit2, HandCoins,
-  Plane, Globe, TrendingUp, ChevronRight, Sparkles,
+  Globe, TrendingUp, ChevronRight, Sparkles,
   Info, History, LayoutDashboard, ReceiptText, Home, User, Share2
 } from 'lucide-react';
 import { tripApi, expenseApi, SOCKET_URL } from '../utils/api';
@@ -502,8 +502,8 @@ export default function TripDetail() {
                      <p className="text-xs font-black text-indigo-200 uppercase tracking-widest opacity-80">Total Group Spent</p>
                      <h2 className="text-2xl sm:text-4xl md:text-5xl font-black tracking-tighter break-words">₹{summary.totalAmount.toLocaleString()}</h2>
                   </div>
-                  <div className="w-14 h-14 bg-white/10 backdrop-blur-md rounded-[1.5rem] flex items-center justify-center border border-white/20 shrink-0">
-                     <Plane size={24} className="text-teal-300 transform -rotate-12" />
+                  <div className="w-14 h-14 rounded-[1.5rem] overflow-hidden border border-white/20 shrink-0 shadow-lg italic">
+                     <img src="/logo.png" alt="TripSplit Logo" className="w-full h-full object-cover" />
                   </div>
                </div>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Plus, Trash2, Plane, Sparkles, User, ArrowRight } from 'lucide-react';
+import { ArrowLeft, Plus, Trash2, Sparkles, User, ArrowRight } from 'lucide-react';
 import { tripApi } from '../utils/api';
 import { useApp } from '../context/AppContext';
 import { useToast } from '../components/Toast';
@@ -97,8 +97,8 @@ export default function CreateTrip() {
           <ArrowLeft size={20} strokeWidth={2.5} />
         </button>
         <div className="flex bg-white px-4 py-2 border border-slate-100 rounded-2xl shadow-sm items-center gap-2">
-           <div className="w-6 h-6 bg-indigo-600 rounded flex items-center justify-center">
-              <Plane size={14} className="text-white" />
+           <div className="w-6 h-6 rounded overflow-hidden shadow italic shrink-0">
+              <img src="/logo.png" alt="TripSplit Logo" className="w-full h-full object-cover" />
            </div>
            <span className="text-sm font-black tracking-tight text-[#0B1A2C]">New Trip</span>
         </div>

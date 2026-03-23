@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useEffect, useRef, useState } from 'react';
 import {
-  Globe, MapPin, Receipt, Users, ArrowRight, ChevronDown,
+  MapPin, Receipt, Users, ArrowRight, ChevronDown,
   Plane, HandCoins, BarChart3, CheckCircle2, Star
 } from 'lucide-react';
 import { useApp } from '../context/AppContext';
@@ -102,8 +102,8 @@ export default function LandingPage() {
             className="flex items-center gap-2.5 cursor-pointer"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
-            <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center shadow">
-              <Globe className="text-white w-5 h-5" />
+            <div className="w-10 h-10 rounded-xl overflow-hidden shadow-sm border border-slate-100 italic">
+              <img src="/logo.png" alt="TripSplit Logo" className="w-full h-full object-cover" />
             </div>
             <span className="text-xl font-black tracking-tight text-[#1a1035]">TripSplit</span>
           </div>
@@ -484,8 +484,8 @@ export default function LandingPage() {
         <div className="max-w-7xl mx-auto grid sm:grid-cols-4 gap-10 mb-12">
           <div className="sm:col-span-2 space-y-4">
             <div className="flex items-center gap-2.5">
-              <div className="w-9 h-9 bg-indigo-500 rounded-xl flex items-center justify-center">
-                <Globe className="text-white w-5 h-5" />
+              <div className="w-10 h-10 rounded-xl overflow-hidden shadow-sm border border-white/10">
+                <img src="/logo.png" alt="TripSplit Logo" className="w-full h-full object-cover" />
               </div>
               <span className="text-xl font-black">TripSplit</span>
             </div>

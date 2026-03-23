@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Plane, MapPin, Globe } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight, Plane, MapPin } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 
 export default function AuthPage() {
@@ -107,8 +107,8 @@ export default function AuthPage() {
 
         {/* Logo */}
         <div className="relative z-10 flex items-center gap-3">
-          <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg">
-            <Globe className="text-white w-5 h-5" />
+          <div className="w-10 h-10 rounded-xl overflow-hidden shadow-lg border border-white/20">
+            <img src="/logo.png" alt="TripSplit Logo" className="w-full h-full object-cover" />
           </div>
           <span className="text-2xl font-black text-indigo-900 tracking-tight">TripSplit</span>
         </div>
@@ -159,8 +159,8 @@ export default function AuthPage() {
 
         {/* Mobile logo */}
         <div className="lg:hidden flex items-center gap-2 mb-10">
-          <div className="w-9 h-9 bg-indigo-600 rounded-xl flex items-center justify-center shadow">
-            <Globe className="text-white w-5 h-5" />
+          <div className="w-10 h-10 rounded-xl overflow-hidden shadow border border-slate-100 italic">
+            <img src="/logo.png" alt="TripSplit Logo" className="w-full h-full object-cover" />
           </div>
           <span className="text-xl font-black text-[#1a1035]">TripSplit</span>
         </div>

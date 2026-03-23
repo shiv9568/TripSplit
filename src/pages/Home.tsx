@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Plane, ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, ShieldCheck, Sparkles } from 'lucide-react';
 import { useApp } from '../context/AppContext';
 import Dashboard from './Dashboard';
 
@@ -27,8 +27,8 @@ export default function Home() {
              <ShieldCheck size={14} /> Global Encryption Active
           </div>
           <div className="flex items-center justify-center gap-3">
-             <div className="w-14 h-14 bg-indigo-600 rounded-2xl flex items-center justify-center shadow-2xl shadow-indigo-600/40 transform rotate-6 hover:rotate-0 transition-transform cursor-pointer">
-                <Plane className="text-white w-8 h-8" size={32} />
+             <div className="w-16 h-16 rounded-[1.25rem] overflow-hidden shadow-2xl border border-white/10 group-hover:scale-105 transition-transform">
+                <img src="/logo.png" alt="TripSplit Logo" className="w-full h-full object-cover" />
              </div>
              <h1 className="text-5xl font-black tracking-tighter text-white">
                 TripSplit
