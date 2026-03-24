@@ -4,6 +4,7 @@ import { ArrowLeft, Clock, Search, Receipt, Filter, Share2, Trash2 } from 'lucid
 import { expenseApi } from '../utils/api';
 import { useToast } from '../components/Toast';
 import type { Expense } from '../types';
+import { ExpenseHistorySkeleton } from '../components/Skeleton';
 
 const getCategoryInfo = (cat: string) => {
   const categories = {
@@ -69,11 +70,8 @@ export default function ExpenseTimeline() {
     return acc;
   }, {} as Record<string, Expense[]>);
 
-  if (isLoading) return (
-     <div className="min-h-screen bg-[#f8fbfa] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent" />
-     </div>
-  );
+
+  if (isLoading && expenses.length === 0) return <ExpenseHistorySkeleton />;
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-[#f8fbfa] flex flex-col font-sans text-[#0B1A2C]">
@@ -126,7 +124,11 @@ export default function ExpenseTimeline() {
                    <div className="absolute left-[39px] sm:left-[51px] top-6 bottom-0 w-[2px] bg-slate-200/50 rounded-full" />
                )}
 
-               {Object.keys(groupedExpenses).length === 0 ? (
+               {isLoading ? (
+                  <div className="flex justify-center items-center py-20 relative z-10">
+                     <div className="animate-spin rounded-full h-10 w-10 border-4 border-indigo-600 border-t-transparent" />
+                  </div>
+               ) : Object.keys(groupedExpenses).length === 0 ? (
                   <div className="bg-white rounded-3xl p-16 text-center border-2 border-dashed border-slate-100 flex flex-col items-center gap-6 relative z-10">
                      <div className="w-24 h-24 bg-slate-50 text-slate-200 rounded-full flex items-center justify-center">
                         <Receipt size={48} />
@@ -198,6 +200,7 @@ export default function ExpenseTimeline() {
                                           </div>
                                           <button 
                                              onClick={() => handleDelete(ex._id)}
+                                             aria-label={`Delete expense ${ex.title}`}
                                              className="w-10 h-10 sm:w-12 sm:h-12 bg-rose-50 rounded-2xl flex items-center justify-center text-rose-300 hover:bg-rose-600 hover:text-white transition-all shadow-sm flex-shrink-0 opacity-0 group-hover/card:opacity-100"
                                           >
                                              <Trash2 size={18} />

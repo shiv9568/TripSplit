@@ -7,6 +7,7 @@ import {
 import { useApp } from '../context/AppContext';
 import { tripApi } from '../utils/api';
 import { useToast } from '../components/Toast';
+import { MyTripsSkeleton } from '../components/Skeleton';
 
 export default function MyTrips() {
   const navigate = useNavigate();
@@ -48,11 +49,7 @@ export default function MyTrips() {
     }
   };
 
-  if (isLoading) return (
-     <div className="min-h-screen bg-[#FAF7F4] flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-4 border-indigo-600 border-t-transparent" />
-     </div>
-  );
+  if (isLoading && trips.length === 0) return <MyTripsSkeleton />;
 
   return (
     <div className="min-h-screen bg-[#FAF7F4] pb-32 font-sans overflow-x-hidden relative">
@@ -68,6 +65,7 @@ export default function MyTrips() {
             </div>
             <button 
                onClick={() => navigate('/create-trip')}
+               aria-label="Create new trip"
                className="w-14 h-14 bg-indigo-600 rounded-[22px] flex items-center justify-center text-white shadow-xl shadow-indigo-200 hover:scale-110 active:scale-95 transition-all"
             >
                <Plus size={28} strokeWidth={3} />
@@ -135,6 +133,7 @@ export default function MyTrips() {
                             {(trip.createdBy === currentUser?.email || trip.createdBy === currentUser?.name) ? (
                                <button 
                                  onClick={(e) => handleDelete(e, trip._id)}
+                                 aria-label={`Delete trip ${trip.name}`}
                                  className="w-10 h-10 bg-rose-50 rounded-xl flex items-center justify-center text-rose-300 hover:bg-rose-600 hover:text-white transition-all"
                                >
                                   <Trash2 size={18} />

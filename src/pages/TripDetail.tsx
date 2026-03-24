@@ -14,6 +14,7 @@ import type { Trip, Expense, TripSummary, Member } from '../types';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 import { PieChart as RechartsPieChart, Pie, Cell, ResponsiveContainer, Tooltip as RechartsTooltip } from 'recharts';
+import { TripDetailSkeleton } from '../components/Skeleton';
 
 const CATEGORIES = [
   { value: 'food', label: 'Food', icon: '🍔', color: 'bg-orange-100 text-orange-600', border: 'border-orange-200' },
@@ -440,13 +441,7 @@ export default function TripDetail() {
     return badges;
   }, [summary, trip, expenses]);
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#f8fbfa] flex items-center justify-center">
-        <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
-      </div>
-    );
-  }
+  if (isLoading && !trip) return <TripDetailSkeleton />;
 
   if (!trip) return null;
 

@@ -1,6 +1,8 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AppProvider } from './context/AppContext';
 import { ToastProvider } from './components/Toast';
+
+
 import { lazy, Suspense } from 'react';
 
 import LandingPage from './pages/LandingPage';
@@ -26,11 +28,13 @@ const NotFound = lazy(() => import('./pages/NotFound'));
 
 function Loading() {
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#f8fbfa]">
-      <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin" />
+    <div className="min-h-screen flex flex-col items-center justify-center bg-[#f8fbfa] z-50 fixed inset-0">
+      <div className="w-12 h-12 border-4 border-indigo-500/20 border-t-indigo-500 rounded-full animate-spin mb-4" />
+      <p className="text-sm font-bold text-slate-400 animate-pulse">Loading amazing things...</p>
     </div>
   );
 }
+
 
 function App() {
   return (
